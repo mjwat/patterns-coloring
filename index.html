@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pattern Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <fieldset>
+          <legend>Page</legend>
+          <div class="radio-group">
+            <label>Preset</label>
+            <div class="radio-row">
+              <label><input type="radio" name="pagePreset" value="a4" checked /> A4</label>
+              <label><input type="radio" name="pagePreset" value="a5" /> A5</label>
+              <label><input type="radio" name="pagePreset" value="manual" /> Manual</label>
+            </div>
+          </div>
+          <div class="control">
+            <label for="canvasWidth">Width</label>
+            <input id="canvasWidth" type="number" min="100" max="5000" value="800" />
+          </div>
+          <div class="control">
+            <label for="canvasHeight">Height</label>
+            <input id="canvasHeight" type="number" min="100" max="5000" value="600" />
+          </div>
+          <div class="radio-group">
+            <label>Orientation</label>
+            <div class="radio-row">
+              <label><input type="radio" name="orientation" value="horizontal" checked /> Horizontal</label>
+              <label><input type="radio" name="orientation" value="vertical" /> Vertical</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Element</legend>
+          <div class="radio-group">
+            <label>Type</label>
+            <div class="radio-row">
+              <label><input type="radio" name="shapeType" value="circle" checked /> Circle</label>
+              <label><input type="radio" name="shapeType" value="square" /> Square</label>
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="sizeRange">Size</label>
+            <div class="inline">
+              <input id="sizeRange" type="range" min="1" max="200" value="30" />
+              <input id="sizeNumber" type="number" min="1" max="200" value="30" />
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="gapXRange">Gap X</label>
+            <div class="inline">
+              <input id="gapXRange" type="range" min="0" max="200" value="80" />
+              <input id="gapXNumber" type="number" min="-500" max="200" value="80" />
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="gapYRange">Gap Y</label>
+            <div class="inline">
+              <input id="gapYRange" type="range" min="0" max="200" value="80" />
+              <input id="gapYNumber" type="number" min="-500" max="200" value="80" />
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="weightRange">Weight</label>
+            <div class="inline">
+              <input id="weightRange" type="range" min="1" max="10" value="2" />
+              <input id="weightNumber" type="number" min="1" max="10" value="2" />
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="shapeRotation">Shape Rotation</label>
+            <input id="shapeRotation" type="number" min="0" max="360" value="0" />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Pattern</legend>
+          <div class="radio-group">
+            <label>Alignment</label>
+            <div class="radio-row">
+              <label><input type="radio" name="alignment" value="top-left" checked /> Top-Left</label>
+              <label><input type="radio" name="alignment" value="center" /> Center</label>
+            </div>
+          </div>
+          <div class="radio-group">
+            <label>Layout</label>
+            <div class="radio-row">
+              <label><input type="radio" name="layout" value="grid" checked /> Grid</label>
+              <label><input type="radio" name="layout" value="brick" /> Brick</label>
+            </div>
+          </div>
+
+          <div class="control">
+            <label for="patternRotation">Pattern Rotation</label>
+            <input id="patternRotation" type="number" min="0" max="360" value="0" />
+          </div>
+        </fieldset>
+
+        <button id="resetDefaults" class="reset-button" type="button">
+          Reset to Defaults
+        </button>
+        <button id="downloadImage" class="primary-button" type="button">
+          Download Image (PNG)
+        </button>
+      </aside>
+
+      <div class="workspace">
+        <div id="canvasContainer">
+          <div class="canvas-frame">
+            <div class="dimension vertical">
+              <span class="line"></span>
+              <span id="heightLabel">0 px</span>
+            </div>
+            <div class="dimension horizontal">
+              <span class="line"></span>
+              <span id="widthLabel">0 px</span>
+            </div>
+            <canvas id="mainCanvas" width="800" height="600"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

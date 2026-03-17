@@ -1,0 +1,150 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 24px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.app {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 300px;
+  border: 1px solid #ccc;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.workspace {
+  flex: 1;
+  background: #2b2b2b;
+  padding: 16px;
+  display: flex;
+}
+
+#canvasContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  align-items: center;
+}
+
+.canvas-frame {
+  position: relative;
+  padding: 28px 56px 40px 28px;
+}
+
+.dimension {
+  position: absolute;
+  color: #b8b8b8;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dimension .line {
+  background: #6f6f6f;
+}
+
+.dimension.vertical {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+}
+
+.dimension.vertical .line {
+  width: 1px;
+  height: 80px;
+}
+
+.dimension.horizontal {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dimension.horizontal .line {
+  width: 120px;
+  height: 1px;
+}
+
+fieldset {
+  border: 1px solid #bbb;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.control {
+  display: grid;
+  gap: 6px;
+}
+
+.inline {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 8px;
+  align-items: center;
+}
+
+.radio-group {
+  display: grid;
+  gap: 6px;
+}
+
+.radio-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.reset-button {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #999;
+  background: #f3f3f3;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-button {
+  margin-top: 8px;
+  padding: 12px 12px;
+  border: 1px solid #1f5fbf;
+  background: #2b6fe3;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#mainCanvas {
+  border: 1px solid #000;
+  display: block;
+  max-width: 100%;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+}
