@@ -1,10 +1,10 @@
-const drawShape = (ctx, x, y, type, size, weight) => {
+const drawShape = (ctx, x, y, type, size, weight, strokeColor) => {
   if (!ctx) return;
 
   ctx.save();
   ctx.beginPath();
   ctx.lineWidth = weight;
-  ctx.strokeStyle = "#000";
+  ctx.strokeStyle = strokeColor || "#000";
 
   const half = size / 2;
 
@@ -23,6 +23,49 @@ window.addEventListener("load", () => {
   const ctx = canvas?.getContext("2d");
   if (!ctx) return;
 
+  const GROUP_STATE_KEY = "patternGroupStates";
+  const groups = document.querySelectorAll(".settings-group");
+  const loadGroupStates = () => {
+    try {
+      const raw = localStorage.getItem(GROUP_STATE_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  };
+
+  const saveGroupStates = (states) => {
+    localStorage.setItem(GROUP_STATE_KEY, JSON.stringify(states));
+  };
+
+  const applyGroupStates = (states) => {
+    groups.forEach((group) => {
+      const key = group.dataset.group;
+      if (!key) return;
+      if (states[key]) {
+        group.classList.add("collapsed");
+      } else {
+        group.classList.remove("collapsed");
+      }
+    });
+  };
+
+  const groupStates = loadGroupStates();
+  applyGroupStates(groupStates);
+
+  groups.forEach((group) => {
+    const header = group.querySelector(".group-header");
+    if (!header) return;
+    header.addEventListener("click", () => {
+      group.classList.toggle("collapsed");
+      const key = group.dataset.group;
+      if (!key) return;
+      groupStates[key] = group.classList.contains("collapsed");
+      saveGroupStates(groupStates);
+    });
+  });
+
   const PRESETS = {
     a4: { width: 2480, height: 3508 },
     a5: { width: 1748, height: 2480 },
@@ -31,6 +74,7 @@ window.addEventListener("load", () => {
   const STORAGE_KEY = "patternSettings";
   const DEFAULT_PRESET = "a4";
   const DEFAULT_ORIENTATION = "horizontal";
+  const MAX_LAYERS = 3;
 
   const getPresetSize = (presetKey, orientation) => {
     const preset = PRESETS[presetKey];
@@ -47,79 +91,107 @@ window.addEventListener("load", () => {
     DEFAULT_ORIENTATION
   );
 
-  const settings = {
+  const globalSettings = {
     pagePreset: DEFAULT_PRESET,
     orientation: DEFAULT_ORIENTATION,
     canvasWidth: defaultPageSize.width,
     canvasHeight: defaultPageSize.height,
+  };
+
+  const createDefaultLayer = () => ({
+    name: "Layer",
     shapeType: "circle",
     size: 30,
     gapX: 80,
     gapY: 80,
     weight: 2,
+    strokeColor: "#000000",
     layout: "grid",
     alignment: "top-left",
     shapeRotation: 0,
     patternRotation: 0,
-  };
+  });
+
+  let layers = [{ ...createDefaultLayer(), name: "Layer 1" }];
+  let activeLayerIndex = 0;
 
   let needsUpdate = true;
 
   const generatePattern = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const size = Number(settings.size);
-    const gapX = Number(settings.gapX);
-    const gapY = Number(settings.gapY);
-    const stepX = size + gapX;
-    const stepY = size + gapY;
+    layers.forEach((layer) => {
+      const size = Number(layer.size);
+      const gapX = Number(layer.gapX);
+      const gapY = Number(layer.gapY);
+      if (!Number.isFinite(size) || size <= 0) return;
+      const stepX = Math.max(1, size + gapX);
+      const stepY = Math.max(1, size + gapY);
 
-    const coverageWidth = canvas.width * 1.5;
-    const coverageHeight = canvas.height * 1.5;
-    const extra = 2;
-    let cols = Math.ceil(coverageWidth / stepX) + 1 + extra;
-    let rows = Math.ceil(coverageHeight / stepY) + 1 + extra;
+      const diagonal = Math.hypot(canvas.width, canvas.height);
+      const offset = diagonal / 2;
+      const coverageWidth = canvas.width + diagonal;
+      const coverageHeight = canvas.height + diagonal;
+      const extra = 2;
+      let cols = Math.ceil(coverageWidth / stepX) + 1 + extra;
+      let rows = Math.ceil(coverageHeight / stepY) + 1 + extra;
 
-    let startX = -canvas.width / 2 - size / 2;
-    let startY = -canvas.height / 2 - size / 2;
-    if (settings.alignment === "center") {
-      startX = -Math.floor(cols / 2) * stepX;
-      startY = -Math.floor(rows / 2) * stepY;
-    }
-
-    const shapeRadians = (settings.shapeRotation * Math.PI) / 180;
-    const patternRadians = (settings.patternRotation * Math.PI) / 180;
-
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(patternRadians);
-
-    let rowIndex = 0;
-    for (let row = 0; row < rows; row += 1) {
-      const y = startY + row * stepY;
-      const rowOffset =
-        settings.layout === "brick" && rowIndex % 2 === 0
-          ? stepX / 2
-          : 0;
-      const rowStartX = startX + rowOffset;
-
-      for (let col = 0; col < cols; col += 1) {
-        const x = rowStartX + col * stepX;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(shapeRadians);
-        drawShape(ctx, 0, 0, settings.shapeType, settings.size, settings.weight);
-        ctx.restore();
+      let startX = -canvas.width / 2 - offset;
+      let startY = -canvas.height / 2 - offset;
+      if (layer.alignment === "center") {
+        startX = -Math.floor(cols / 2) * stepX;
+        startY = -Math.floor(rows / 2) * stepY;
       }
-      rowIndex += 1;
-    }
-    ctx.restore();
+
+      const shapeRadians = (layer.shapeRotation * Math.PI) / 180;
+      const patternRadians = (layer.patternRotation * Math.PI) / 180;
+
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(patternRadians);
+
+      let rowIndex = 0;
+      for (let row = 0; row < rows; row += 1) {
+        const y = startY + row * stepY;
+        const rowOffset =
+          layer.layout === "brick" && rowIndex % 2 === 0
+            ? stepX / 2
+            : 0;
+        const rowStartX = startX + rowOffset;
+
+        for (let col = 0; col < cols; col += 1) {
+          const x = rowStartX + col * stepX;
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(shapeRadians);
+          drawShape(
+            ctx,
+            0,
+            0,
+            layer.shapeType,
+            layer.size,
+            layer.weight,
+            layer.strokeColor
+          );
+          ctx.restore();
+        }
+        rowIndex += 1;
+      }
+      ctx.restore();
+    });
   };
+
+  const getActiveLayer = () => layers[activeLayerIndex];
 
   let isSyncing = false;
   const saveSettings = () => {
     if (isSyncing) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    const payload = {
+      globalSettings,
+      layers,
+      activeLayerIndex,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   };
 
   const bindLinkedInputs = (rangeId, numberId, key) => {
@@ -132,7 +204,9 @@ window.addEventListener("load", () => {
       if (Number.isNaN(numericValue)) return;
       range.value = String(numericValue);
       number.value = String(numericValue);
-      settings[key] = numericValue;
+      const layer = getActiveLayer();
+      if (!layer) return;
+      layer[key] = numericValue;
       needsUpdate = true;
       saveSettings();
     };
@@ -147,7 +221,9 @@ window.addEventListener("load", () => {
     radios.forEach((radio) => {
       radio.addEventListener("change", () => {
         if (radio.checked) {
-          settings[key] = radio.value;
+          const layer = getActiveLayer();
+          if (!layer) return;
+          layer[key] = radio.value;
           needsUpdate = true;
           saveSettings();
         }
@@ -159,27 +235,267 @@ window.addEventListener("load", () => {
   bindLinkedInputs("gapXRange", "gapXNumber", "gapX");
   bindLinkedInputs("gapYRange", "gapYNumber", "gapY");
   bindLinkedInputs("weightRange", "weightNumber", "weight");
+  bindLinkedInputs("shapeRotationRange", "shapeRotationNumber", "shapeRotation");
+  bindLinkedInputs(
+    "patternRotationRange",
+    "patternRotationNumber",
+    "patternRotation"
+  );
+
+  const strokeColorInput = document.getElementById("strokeColor");
+  const strokeColorHexInput = document.getElementById("strokeColorHex");
+
+  const normalizeHex = (value) => {
+    const raw = value.trim();
+    const withHash = raw.startsWith("#") ? raw : `#${raw}`;
+    const cleaned = withHash.replace(/[^#0-9a-fA-F]/g, "");
+    const hex = cleaned.slice(1).padEnd(6, "0").slice(0, 6);
+    return `#${hex.toUpperCase()}`;
+  };
+
+  const isValidHex = (value) => /^#[0-9A-Fa-f]{6}$/.test(value);
+
+  const applyStrokeColor = (hex) => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.strokeColor = hex;
+    if (strokeColorInput) strokeColorInput.value = hex;
+    if (strokeColorHexInput) strokeColorHexInput.value = hex;
+    needsUpdate = true;
+    saveSettings();
+  };
+
+  if (strokeColorInput) {
+    strokeColorInput.addEventListener("input", () => {
+      const hex = normalizeHex(strokeColorInput.value);
+      applyStrokeColor(hex);
+    });
+  }
+
+  if (strokeColorHexInput) {
+    strokeColorHexInput.addEventListener("input", () => {
+      const normalized = normalizeHex(strokeColorHexInput.value);
+      strokeColorHexInput.value = normalized;
+      if (isValidHex(normalized)) {
+        applyStrokeColor(normalized);
+      }
+    });
+  }
   bindRadioGroup("shapeType", "shapeType");
   bindRadioGroup("layout", "layout");
   bindRadioGroup("alignment", "alignment");
 
-  const shapeRotationInput = document.getElementById("shapeRotation");
-  if (shapeRotationInput) {
-    shapeRotationInput.addEventListener("input", () => {
-      settings.shapeRotation = Number(shapeRotationInput.value) || 0;
-      needsUpdate = true;
+  const layersList = document.getElementById("layersList");
+  const addLayerButton = document.getElementById("addLayer");
+
+  const renderLayerList = () => {
+    if (!layersList) return;
+    layersList.innerHTML = "";
+    layers.forEach((layer, index) => {
+      const item = document.createElement("div");
+      item.className = "layer-item";
+      if (index === activeLayerIndex) {
+        item.classList.add("active");
+      }
+
+      const reorder = document.createElement("div");
+      reorder.className = "layer-actions";
+
+      const upButton = document.createElement("button");
+      upButton.className = "layer-action";
+      upButton.type = "button";
+      upButton.textContent = "↑";
+      upButton.disabled = index === 0;
+      upButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (index === 0) return;
+        const temp = layers[index - 1];
+        layers[index - 1] = layers[index];
+        layers[index] = temp;
+        if (activeLayerIndex === index) {
+          activeLayerIndex = index - 1;
+        } else if (activeLayerIndex === index - 1) {
+          activeLayerIndex = index;
+        }
+        renderLayerList();
+        saveSettings();
+        needsUpdate = true;
+      });
+
+      const downButton = document.createElement("button");
+      downButton.className = "layer-action";
+      downButton.type = "button";
+      downButton.textContent = "↓";
+      downButton.disabled = index === layers.length - 1;
+      downButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (index === layers.length - 1) return;
+        const temp = layers[index + 1];
+        layers[index + 1] = layers[index];
+        layers[index] = temp;
+        if (activeLayerIndex === index) {
+          activeLayerIndex = index + 1;
+        } else if (activeLayerIndex === index + 1) {
+          activeLayerIndex = index;
+        }
+        renderLayerList();
+        saveSettings();
+        needsUpdate = true;
+      });
+
+      reorder.appendChild(upButton);
+      reorder.appendChild(downButton);
+
+      const renameButton = document.createElement("button");
+      renameButton.className = "layer-rename";
+      renameButton.type = "button";
+      renameButton.textContent = "✎";
+
+      const nameContainer = document.createElement("div");
+      nameContainer.className = "layer-name-container";
+
+      const nameDisplay = document.createElement("span");
+      nameDisplay.className = "layer-name";
+      nameDisplay.textContent = layer.name || `Layer ${index + 1}`;
+
+      const nameInput = document.createElement("input");
+      nameInput.className = "layer-name-input";
+      nameInput.type = "text";
+      nameInput.value = layer.name || `Layer ${index + 1}`;
+      nameInput.style.display = "none";
+      nameContainer.appendChild(nameDisplay);
+      nameContainer.appendChild(nameInput);
+
+      const finishRename = () => {
+        const nextName = nameInput.value.trim() || `Layer ${index + 1}`;
+        layer.name = nextName;
+        nameDisplay.textContent = nextName;
+        nameInput.style.display = "none";
+        nameDisplay.style.display = "inline";
+        saveSettings();
+      };
+
+      renameButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        nameInput.value = layer.name || `Layer ${index + 1}`;
+        nameDisplay.style.display = "none";
+        nameInput.style.display = "inline";
+        nameInput.focus();
+        nameInput.select();
+      });
+
+      nameInput.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+
+      nameInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          finishRename();
+        }
+      });
+
+      nameInput.addEventListener("blur", () => {
+        finishRename();
+      });
+
+      item.appendChild(reorder);
+      item.appendChild(renameButton);
+      item.appendChild(nameContainer);
+
+      if (index > 0) {
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "layer-delete";
+        deleteButton.type = "button";
+        deleteButton.textContent = "×";
+        deleteButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          layers.splice(index, 1);
+          if (activeLayerIndex >= layers.length) {
+            activeLayerIndex = layers.length - 1;
+          }
+          renderLayerList();
+          applySettingsToUI();
+          saveSettings();
+          needsUpdate = true;
+        });
+        item.appendChild(deleteButton);
+      }
+
+      item.addEventListener("click", () => {
+        setActiveLayer(index);
+      });
+
+      layersList.appendChild(item);
+    });
+
+    if (addLayerButton) {
+      addLayerButton.style.display = layers.length < MAX_LAYERS ? "block" : "none";
+    }
+  };
+
+  const syncLayerFromInputs = (layer) => {
+    if (!layer) return;
+    const getValue = (id) => document.getElementById(id)?.value;
+    const setNumber = (id, setter) => {
+      const raw = Number(getValue(id));
+      if (!Number.isNaN(raw)) setter(raw);
+    };
+    layer.shapeType =
+      document.querySelector('input[name="shapeType"]:checked')?.value ||
+      layer.shapeType;
+    layer.layout =
+      document.querySelector('input[name="layout"]:checked')?.value ||
+      layer.layout;
+    layer.alignment =
+      document.querySelector('input[name="alignment"]:checked')?.value ||
+      layer.alignment;
+    setNumber("sizeNumber", (value) => {
+      layer.size = value;
+    });
+    setNumber("gapXNumber", (value) => {
+      layer.gapX = value;
+    });
+    setNumber("gapYNumber", (value) => {
+      layer.gapY = value;
+    });
+    setNumber("weightNumber", (value) => {
+      layer.weight = value;
+    });
+    setNumber("shapeRotationNumber", (value) => {
+      layer.shapeRotation = value;
+    });
+    setNumber("patternRotationNumber", (value) => {
+      layer.patternRotation = value;
+    });
+    layer.strokeColor = getValue("strokeColor") || layer.strokeColor;
+  };
+
+  const setActiveLayer = (index) => {
+    if (index === activeLayerIndex) return;
+    const currentLayer = getActiveLayer();
+    syncLayerFromInputs(currentLayer);
+    activeLayerIndex = index;
+    renderLayerList();
+    applySettingsToUI();
+    saveSettings();
+    needsUpdate = true;
+  };
+
+  if (addLayerButton) {
+    addLayerButton.addEventListener("click", () => {
+      if (layers.length >= MAX_LAYERS) return;
+      layers.push({
+        ...createDefaultLayer(),
+        name: `Layer ${layers.length + 1}`,
+      });
+      activeLayerIndex = layers.length - 1;
+      renderLayerList();
+      applySettingsToUI();
       saveSettings();
+      needsUpdate = true;
     });
   }
 
-  const patternRotationInput = document.getElementById("patternRotation");
-  if (patternRotationInput) {
-    patternRotationInput.addEventListener("input", () => {
-      settings.patternRotation = Number(patternRotationInput.value) || 0;
-      needsUpdate = true;
-      saveSettings();
-    });
-  }
 
   const widthInput = document.getElementById("canvasWidth");
   const heightInput = document.getElementById("canvasHeight");
@@ -193,8 +509,8 @@ window.addEventListener("load", () => {
     canvas.height = height;
     if (widthLabel) widthLabel.textContent = `${width} px`;
     if (heightLabel) heightLabel.textContent = `${height} px`;
-    settings.canvasWidth = width;
-    settings.canvasHeight = height;
+    globalSettings.canvasWidth = width;
+    globalSettings.canvasHeight = height;
     needsUpdate = true;
   };
 
@@ -220,7 +536,7 @@ window.addEventListener("load", () => {
     if (radio && !radio.checked) {
       isUpdatingOrientation = true;
       radio.checked = true;
-      settings.orientation = target;
+      globalSettings.orientation = target;
       isUpdatingOrientation = false;
     }
   };
@@ -230,7 +546,7 @@ window.addEventListener("load", () => {
       `input[name="pagePreset"][value="${value}"]`
     );
     if (presetRadio) presetRadio.checked = true;
-    settings.pagePreset = value;
+    globalSettings.pagePreset = value;
   };
 
   widthInput?.addEventListener("input", () => {
@@ -261,7 +577,7 @@ window.addEventListener("load", () => {
 
     widthInput.value = String(width);
     heightInput.value = String(height);
-    settings.pagePreset = presetKey;
+    globalSettings.pagePreset = presetKey;
     updateCanvasSize();
     updateOrientationRadios();
     saveSettings();
@@ -274,7 +590,7 @@ window.addEventListener("load", () => {
     radio.addEventListener("change", () => {
       if (!radio.checked || !widthInput || !heightInput) return;
       if (isUpdatingOrientation) return;
-      settings.orientation = radio.value;
+      globalSettings.orientation = radio.value;
       const currentWidth = widthInput.value;
       widthInput.value = heightInput.value;
       heightInput.value = currentWidth;
@@ -308,22 +624,32 @@ window.addEventListener("load", () => {
 
   const applySettingsToUI = () => {
     isSyncing = true;
-    if (widthInput) widthInput.value = String(settings.canvasWidth);
-    if (heightInput) heightInput.value = String(settings.canvasHeight);
-    setRadioValue("pagePreset", settings.pagePreset);
-    setRadioValue("orientation", settings.orientation);
-    setRadioValue("shapeType", settings.shapeType);
-    setRadioValue("layout", settings.layout);
-    setRadioValue("alignment", settings.alignment);
-    setLinkedValue("sizeRange", "sizeNumber", settings.size);
-    setLinkedValue("gapXRange", "gapXNumber", settings.gapX);
-    setLinkedValue("gapYRange", "gapYNumber", settings.gapY);
-    setLinkedValue("weightRange", "weightNumber", settings.weight);
-    if (shapeRotationInput) {
-      shapeRotationInput.value = String(settings.shapeRotation);
-    }
-    if (patternRotationInput) {
-      patternRotationInput.value = String(settings.patternRotation);
+    if (widthInput) widthInput.value = String(globalSettings.canvasWidth);
+    if (heightInput) heightInput.value = String(globalSettings.canvasHeight);
+    setRadioValue("pagePreset", globalSettings.pagePreset);
+    setRadioValue("orientation", globalSettings.orientation);
+
+    const layer = getActiveLayer();
+    if (layer) {
+      setRadioValue("shapeType", layer.shapeType);
+      setRadioValue("layout", layer.layout);
+      setRadioValue("alignment", layer.alignment);
+      setLinkedValue("sizeRange", "sizeNumber", layer.size);
+      setLinkedValue("gapXRange", "gapXNumber", layer.gapX);
+      setLinkedValue("gapYRange", "gapYNumber", layer.gapY);
+      setLinkedValue("weightRange", "weightNumber", layer.weight);
+      setLinkedValue(
+        "shapeRotationRange",
+        "shapeRotationNumber",
+        layer.shapeRotation
+      );
+      setLinkedValue(
+        "patternRotationRange",
+        "patternRotationNumber",
+        layer.patternRotation
+      );
+      if (strokeColorInput) strokeColorInput.value = layer.strokeColor;
+      if (strokeColorHexInput) strokeColorHexInput.value = layer.strokeColor;
     }
     updateCanvasSize();
     updateOrientationRadios();
@@ -334,30 +660,83 @@ window.addEventListener("load", () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       applyPreset(DEFAULT_PRESET);
+      renderLayerList();
       return;
     }
     try {
       const parsed = JSON.parse(raw);
-      if (parsed.spacingX !== undefined && parsed.gapX === undefined) {
-        parsed.gapX = parsed.spacingX;
+
+      if (Array.isArray(parsed.layers)) {
+        Object.assign(globalSettings, parsed.globalSettings || {});
+        layers = parsed.layers.map((layer, index) => ({
+          ...createDefaultLayer(),
+          name: layer.name || `Layer ${index + 1}`,
+          ...layer,
+        }));
+        if (layers.length > MAX_LAYERS) {
+          layers = layers.slice(0, MAX_LAYERS);
+        }
+        activeLayerIndex =
+          typeof parsed.activeLayerIndex === "number"
+            ? parsed.activeLayerIndex
+            : 0;
+        if (activeLayerIndex < 0 || activeLayerIndex >= layers.length) {
+          activeLayerIndex = 0;
+        }
+      } else {
+        if (parsed.spacingX !== undefined && parsed.gapX === undefined) {
+          parsed.gapX = parsed.spacingX;
+        }
+        if (parsed.spacingY !== undefined && parsed.gapY === undefined) {
+          parsed.gapY = parsed.spacingY;
+        }
+        if (parsed.shapeType === "triangle") {
+          parsed.shapeType = "circle";
+        }
+        if (parsed.angle !== undefined && parsed.shapeRotation === undefined) {
+          parsed.shapeRotation = parsed.angle;
+        }
+        if (parsed.patternRotation === undefined) {
+          parsed.patternRotation = 0;
+        }
+        if (parsed.strokeColor === undefined) {
+          parsed.strokeColor = "#000000";
+        }
+
+        Object.assign(globalSettings, {
+          pagePreset: parsed.pagePreset || DEFAULT_PRESET,
+          orientation: parsed.orientation || DEFAULT_ORIENTATION,
+          canvasWidth: parsed.canvasWidth || defaultPageSize.width,
+          canvasHeight: parsed.canvasHeight || defaultPageSize.height,
+        });
+
+        const legacyLayer = { ...createDefaultLayer(), name: "Layer 1" };
+        if (parsed.shapeType !== undefined) legacyLayer.shapeType = parsed.shapeType;
+        if (parsed.size !== undefined) legacyLayer.size = parsed.size;
+        if (parsed.gapX !== undefined) legacyLayer.gapX = parsed.gapX;
+        if (parsed.gapY !== undefined) legacyLayer.gapY = parsed.gapY;
+        if (parsed.weight !== undefined) legacyLayer.weight = parsed.weight;
+        if (parsed.strokeColor !== undefined) {
+          legacyLayer.strokeColor = parsed.strokeColor;
+        }
+        if (parsed.layout !== undefined) legacyLayer.layout = parsed.layout;
+        if (parsed.alignment !== undefined) legacyLayer.alignment = parsed.alignment;
+        if (parsed.shapeRotation !== undefined) {
+          legacyLayer.shapeRotation = parsed.shapeRotation;
+        }
+        if (parsed.patternRotation !== undefined) {
+          legacyLayer.patternRotation = parsed.patternRotation;
+        }
+        layers = [legacyLayer];
+        activeLayerIndex = 0;
       }
-      if (parsed.spacingY !== undefined && parsed.gapY === undefined) {
-        parsed.gapY = parsed.spacingY;
-      }
-      if (parsed.shapeType === "triangle") {
-        parsed.shapeType = "circle";
-      }
-      if (parsed.angle !== undefined && parsed.shapeRotation === undefined) {
-        parsed.shapeRotation = parsed.angle;
-      }
-      if (parsed.patternRotation === undefined) {
-        parsed.patternRotation = 0;
-      }
-      Object.assign(settings, parsed);
+
       applySettingsToUI();
+      renderLayerList();
       saveSettings();
     } catch {
       applyPreset(DEFAULT_PRESET);
+      renderLayerList();
     }
   };
 
@@ -369,22 +748,16 @@ window.addEventListener("load", () => {
         DEFAULT_PRESET,
         DEFAULT_ORIENTATION
       );
-      Object.assign(settings, {
+      Object.assign(globalSettings, {
         pagePreset: DEFAULT_PRESET,
         orientation: DEFAULT_ORIENTATION,
         canvasWidth: resetSize.width,
         canvasHeight: resetSize.height,
-        shapeType: "circle",
-        size: 30,
-        gapX: 80,
-        gapY: 80,
-        weight: 2,
-        layout: "grid",
-        alignment: "top-left",
-        shapeRotation: 0,
-        patternRotation: 0,
       });
+      layers = [{ ...createDefaultLayer(), name: "Layer 1" }];
+      activeLayerIndex = 0;
       applySettingsToUI();
+      renderLayerList();
       saveSettings();
     });
   }
