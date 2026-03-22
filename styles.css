@@ -9,7 +9,6 @@ body {
 
 .app {
   display: flex;
-  /* gap: 24px; */
   align-items: flex-start;
 }
 
@@ -18,7 +17,6 @@ body {
   min-width: 380px;
   max-width: 380px;
   box-sizing: border-box;
-  /* background: rgb(232, 249, 255); */
   background: linear-gradient(180deg, #f5edfe 0%, #eff5ff 100%);
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
   padding: 16px;
@@ -26,16 +24,20 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  z-index: 10
+  z-index: 10;
 }
 
 .sidebar-title {
   font-size: 1.4em;
   font-weight: 700;
-  margin: 0 ;
+  margin: 0;
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
   color: #222;
+}
+
+.reset-top {
+  margin-top: 12px;
 }
 
 .sidebar-content {
@@ -56,7 +58,6 @@ body {
 .sidebar-footer {
   padding: 20px;
   border-top: 1px solid #eee;
-  /* background: #fff; */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -64,9 +65,7 @@ body {
 }
 .workspace {
   flex: 1;
-  /* background: #ebebeb; */
   background: linear-gradient(0deg, #d7d6df 0%, #d5dbe5 100%);
-  /* padding: 16px; */
   display: flex;
   height: 100vh;
 }
@@ -127,10 +126,11 @@ body {
   border: 1px solid #eee;
   padding: 20px;
   border-radius: 8px;
-  /* margin-bottom: 20px; */
   display: grid;
   gap: 10px;
   flex-shrink: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .settings-group .group-header {
@@ -141,9 +141,13 @@ body {
   font-size: 1.1em;
   font-weight: 600;
   color: #333;
-  /* margin-bottom: 15px; */
   cursor: pointer;
   user-select: none;
+}
+
+.settings-separator {
+  border-top: 1px solid #eee;
+  margin: 15px 0;
 }
 
 .settings-group .arrow {
@@ -162,6 +166,8 @@ body {
 .control {
   display: grid;
   gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 label {
@@ -181,6 +187,8 @@ label {
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .control-row input[type="range"] {
@@ -196,13 +204,16 @@ label {
   border-radius: 4px;
 }
 
-.control-row input[type="text"] {
-  width: 90px;
-  text-align: center;
-  flex-shrink: 0;
-  padding: 5px;
+.control-row select {
+  width: 100%;
+  padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  background: #fff;
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .unit-label {
@@ -236,7 +247,7 @@ label {
   color: #666;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
@@ -248,7 +259,7 @@ label {
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
@@ -264,7 +275,7 @@ label {
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
   cursor: pointer;
 }
@@ -282,15 +293,35 @@ label {
 
 .layer-action,
 .layer-rename,
+.layer-duplicate,
+.layer-visibility,
 .layer-delete {
   border: 1px solid #ccc;
   background: #f7f7f7;
   color: #444;
   cursor: pointer;
   font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
+}
+
+.layer-visibility.is-hidden {
+  opacity: 0.6;
+}
+
+.layer-actions button:hover {
+  background: #efefef;
+}
+
+.layer-action img,
+.layer-rename img,
+.layer-duplicate img,
+.layer-visibility img,
+.layer-delete img {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .layer-action:disabled,
@@ -360,4 +391,58 @@ label {
   object-fit: contain;
   background: #fff;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+}
+
+#exportCanvas {
+  display: none;
+}
+
+#mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#mobile-overlay .overlay-content {
+  text-align: center;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 320px;
+}
+
+#mobile-overlay .overlay-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+#mobile-overlay h2 {
+  font-size: 1.4em;
+  margin: 0 0 10px;
+}
+
+#mobile-overlay p {
+  margin: 0 0 10px;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  #mobile-overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  body {
+    overflow: hidden;
+  }
 }
