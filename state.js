@@ -65,7 +65,7 @@ export const createDefaultState = () => {
       canvasWidth: defaultPageSize.width,
       canvasHeight: defaultPageSize.height,
       backgroundColor: "#ffffff",
-      withoutBackground: false,
+      withoutBackground: true,
     },
     layers: [{ ...createDefaultLayer(), name: "Layer 1" }],
     activeLayerIndex: 0,
@@ -195,7 +195,10 @@ export const loadState = () => {
         canvasWidth: parsed.canvasWidth || defaultPageSize.width,
         canvasHeight: parsed.canvasHeight || defaultPageSize.height,
         backgroundColor: parsed.backgroundColor || "#ffffff",
-        withoutBackground: Boolean(parsed.withoutBackground),
+        withoutBackground:
+          parsed.withoutBackground === undefined
+            ? true
+            : Boolean(parsed.withoutBackground),
       },
       layers: [legacy],
       activeLayerIndex: 0,

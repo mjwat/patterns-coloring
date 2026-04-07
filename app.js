@@ -18,13 +18,17 @@ window.addEventListener("load", () => {
     needsUpdate = true;
   };
 
-  const renderExport = () => {
+  const renderExport = (backgroundColorOverride) => {
     if (!exportCtx || !exportCanvas) return;
+    const backgroundColor =
+      backgroundColorOverride === undefined
+        ? getEffectiveBackgroundColor()
+        : backgroundColorOverride;
     generatePattern(
       exportCtx,
       exportCanvas,
       state.layers,
-      getEffectiveBackgroundColor()
+      backgroundColor
     );
   };
 

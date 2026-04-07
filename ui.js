@@ -112,11 +112,11 @@ export const initUI = ({
   const heightInput = document.getElementById("canvasHeight");
   const pagePresetSelect = document.getElementById("pagePresetSelect");
   const pageBackgroundColorInput = document.getElementById("pageBackgroundColor");
+  const pageBackgroundEnabledInput = document.getElementById(
+    "pageBackgroundEnabled"
+  );
   const pageBackgroundColorControl = document.getElementById(
     "pageBackgroundColorControl"
-  );
-  const pageBackgroundModeRadios = document.querySelectorAll(
-    'input[name="pageBackgroundMode"]'
   );
   const widthLabel = document.getElementById("widthLabel");
   const heightLabel = document.getElementById("heightLabel");
@@ -132,6 +132,9 @@ export const initUI = ({
       pageBackgroundColorControl.style.display = withoutBackground
         ? "none"
         : "grid";
+    }
+    if (pageBackgroundEnabledInput) {
+      pageBackgroundEnabledInput.checked = !withoutBackground;
     }
   };
 
@@ -211,14 +214,11 @@ export const initUI = ({
     saveState(state);
   });
 
-  pageBackgroundModeRadios.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (!radio.checked) return;
-      state.globalSettings.withoutBackground = radio.value === "without";
-      applyBackgroundModeUI(state.globalSettings.withoutBackground);
-      scheduleRender();
-      saveState(state);
-    });
+  pageBackgroundEnabledInput?.addEventListener("change", () => {
+    state.globalSettings.withoutBackground = !pageBackgroundEnabledInput.checked;
+    applyBackgroundModeUI(state.globalSettings.withoutBackground);
+    scheduleRender();
+    saveState(state);
   });
 
   widthInput?.addEventListener("input", () => {
@@ -938,10 +938,6 @@ export const initUI = ({
       pageBackgroundColorInput.value =
         state.globalSettings.backgroundColor || "#ffffff";
     }
-    const backgroundMode = state.globalSettings.withoutBackground
-      ? "without"
-      : "with";
-    setRadioValue("pageBackgroundMode", backgroundMode);
     applyBackgroundModeUI(state.globalSettings.withoutBackground);
     setPresetSelection(state.globalSettings.pagePreset);
     setRadioValue("orientation", state.globalSettings.orientation);
@@ -1089,7 +1085,11 @@ export const initUI = ({
     )}-${pad(now.getSeconds())}`;
     const exportFormat =
       document.getElementById("exportFormat")?.value || "png";
-    if (renderExport) renderExport();
+    const exportBackgroundOverride =
+      exportFormat === "png" && state.globalSettings.withoutBackground
+        ? null
+        : getEffectiveBackgroundColor();
+    if (renderExport) renderExport(exportBackgroundOverride);
     const targetCanvas = exportCanvas || canvas;
     const createBackgroundCanvas = (sourceCanvas, fillColor) => {
       const flattenedCanvas = document.createElement("canvas");
