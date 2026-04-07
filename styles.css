@@ -57,11 +57,41 @@ body {
 
 .sidebar-footer {
   padding: 20px;
+  padding-bottom: 0;
   border-top: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 10px;
   flex-shrink: 0;
+}
+
+.footer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-footer .arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.sidebar-footer.collapsed .arrow {
+  transform: rotate(-90deg);
+}
+
+.footer-body {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-footer.collapsed .footer-body {
+  display: none;
 }
 .workspace {
   flex: 1;

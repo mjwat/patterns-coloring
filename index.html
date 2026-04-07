@@ -268,19 +268,26 @@
 
         <div class="sidebar-spacer"></div>
       </div>
-      <div class="sidebar-footer">
-        <div class="control footer-control">
-          <label class="control-label" for="exportFormat">Export Format</label>
-          <div class="control-row">
-            <select id="exportFormat">
-              <option value="png" selected>PNG</option>
-              <option value="jpg">JPG</option>
-            </select>
+      <div id="sidebarFooter" class="sidebar-footer">
+        <h3 id="footerHeader" class="footer-header">
+          <span class="arrow">▾</span>
+          Export
+        </h3>
+        <div id="footerBody" class="footer-body">
+          <div class="control footer-control">
+            <label class="control-label" for="exportFormat">Format</label>
+            <div class="control-row">
+              <select id="exportFormat">
+                <option value="png" selected>PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="pdf">PDF</option>
+              </select>
+            </div>
           </div>
+          <button id="downloadImage" class="primary-button" type="button">
+            Download
+          </button>
         </div>
-        <button id="downloadImage" class="primary-button" type="button">
-          Download Image
-        </button>
       </div>
     </aside>
 

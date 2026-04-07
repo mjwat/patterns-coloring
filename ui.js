@@ -17,6 +17,7 @@ export const initUI = ({
   renderExport,
 }) => {
   if (!canvas) return;
+  const FOOTER_STATE_KEY = "patternFooterCollapsed";
 
   const getActiveLayer = () => state.layers[state.activeLayerIndex];
   // Current debounce: 100ms (sliders), 400ms (number/text)
@@ -81,6 +82,31 @@ export const initUI = ({
       saveGroupStates(groupStates);
     });
   });
+
+  const sidebarFooter = document.getElementById("sidebarFooter");
+  const footerHeader = document.getElementById("footerHeader");
+  const loadFooterState = () => {
+    try {
+      return localStorage.getItem(FOOTER_STATE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  };
+  const saveFooterState = (collapsed) => {
+    localStorage.setItem(FOOTER_STATE_KEY, collapsed ? "1" : "0");
+  };
+
+  if (sidebarFooter) {
+    const collapsed = loadFooterState();
+    sidebarFooter.classList.toggle("collapsed", collapsed);
+  }
+
+  if (footerHeader && sidebarFooter) {
+    footerHeader.addEventListener("click", () => {
+      sidebarFooter.classList.toggle("collapsed");
+      saveFooterState(sidebarFooter.classList.contains("collapsed"));
+    });
+  }
 
   const widthInput = document.getElementById("canvasWidth");
   const heightInput = document.getElementById("canvasHeight");
@@ -803,6 +829,85 @@ export const initUI = ({
   }
 
   const downloadImage = () => {
+    const downloadBlob = (blob, filename) => {
+      const url = URL.createObjectURL(blob);
+      const tempLink = document.createElement("a");
+      tempLink.download = filename;
+      tempLink.href = url;
+      tempLink.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    const dataUrlToBytes = (dataUrl) => {
+      const base64 = dataUrl.split(",")[1] || "";
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    };
+
+    const buildPdfFromJpeg = (jpegBytes, imageWidthPx, imageHeightPx) => {
+      const encoder = new TextEncoder();
+      const chunks = [];
+      let offset = 0;
+      const objectOffsets = [];
+
+      const appendText = (text) => {
+        const bytes = encoder.encode(text);
+        chunks.push(bytes);
+        offset += bytes.length;
+      };
+      const appendBytes = (bytes) => {
+        chunks.push(bytes);
+        offset += bytes.length;
+      };
+
+      const pointsPerPx = 72 / 96;
+      const pageWidth = Math.max(1, Math.round(imageWidthPx * pointsPerPx));
+      const pageHeight = Math.max(1, Math.round(imageHeightPx * pointsPerPx));
+
+      appendText("%PDF-1.4\n");
+
+      objectOffsets[1] = offset;
+      appendText("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+
+      objectOffsets[2] = offset;
+      appendText("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+
+      objectOffsets[3] = offset;
+      appendText(
+        `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`
+      );
+
+      objectOffsets[4] = offset;
+      appendText(
+        `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imageWidthPx} /Height ${imageHeightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`
+      );
+      appendBytes(jpegBytes);
+      appendText("\nendstream\nendobj\n");
+
+      const contentStream = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ\n`;
+      const contentBytes = encoder.encode(contentStream);
+      objectOffsets[5] = offset;
+      appendText(`5 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`);
+      appendBytes(contentBytes);
+      appendText("endstream\nendobj\n");
+
+      const xrefOffset = offset;
+      appendText("xref\n0 6\n");
+      appendText("0000000000 65535 f \n");
+      for (let i = 1; i <= 5; i += 1) {
+        appendText(`${String(objectOffsets[i]).padStart(10, "0")} 00000 n \n`);
+      }
+      appendText(
+        `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+      );
+
+      return new Blob(chunks, { type: "application/pdf" });
+    };
+
     const link = document.createElement("a");
     const now = new Date();
     const pad = (value) => String(value).padStart(2, "0");
@@ -813,13 +918,48 @@ export const initUI = ({
     )}-${pad(now.getSeconds())}`;
     const exportFormat =
       document.getElementById("exportFormat")?.value || "png";
+    if (renderExport) renderExport();
+    const targetCanvas = exportCanvas || canvas;
+    const createWhiteBackgroundCanvas = (sourceCanvas) => {
+      const flattenedCanvas = document.createElement("canvas");
+      flattenedCanvas.width = sourceCanvas.width;
+      flattenedCanvas.height = sourceCanvas.height;
+      const flattenedCtx = flattenedCanvas.getContext("2d");
+      if (flattenedCtx) {
+        flattenedCtx.fillStyle = "#ffffff";
+        flattenedCtx.fillRect(
+          0,
+          0,
+          flattenedCanvas.width,
+          flattenedCanvas.height
+        );
+        flattenedCtx.drawImage(sourceCanvas, 0, 0);
+      }
+      return flattenedCanvas;
+    };
+
+    if (exportFormat === "pdf") {
+      const flattenedCanvas = createWhiteBackgroundCanvas(targetCanvas);
+      const jpegDataUrl = flattenedCanvas.toDataURL("image/jpeg", 0.95);
+      const jpegBytes = dataUrlToBytes(jpegDataUrl);
+      const pdfBlob = buildPdfFromJpeg(
+        jpegBytes,
+        targetCanvas.width,
+        targetCanvas.height
+      );
+      downloadBlob(pdfBlob, `coloring-page_${timestamp}.pdf`);
+      return;
+    }
     const isJpg = exportFormat === "jpg";
     const mime = isJpg ? "image/jpeg" : "image/png";
     const ext = isJpg ? "jpg" : "png";
-    if (renderExport) renderExport();
-    const targetCanvas = exportCanvas || canvas;
     link.download = `coloring-page_${timestamp}.${ext}`;
-    link.href = targetCanvas.toDataURL(mime, isJpg ? 0.95 : undefined);
+    if (isJpg) {
+      const flattenedCanvas = createWhiteBackgroundCanvas(targetCanvas);
+      link.href = flattenedCanvas.toDataURL("image/jpeg", 0.95);
+    } else {
+      link.href = targetCanvas.toDataURL(mime, undefined);
+    }
     link.click();
   };
 
