@@ -413,6 +413,14 @@ export const initUI = ({
   );
 
   const strokeColorInput = document.getElementById("strokeColor");
+  const fillEnabledInput = document.getElementById("fillEnabled");
+  const fillColorInput = document.getElementById("fillColor");
+  const fillColorControl = document.getElementById("fillColorControl");
+  const updateFillControls = (enabled) => {
+    if (fillColorControl) {
+      fillColorControl.style.display = enabled ? "grid" : "none";
+    }
+  };
   const applyStrokeColor = (hex) => {
     const layer = getActiveLayer();
     if (!layer) return;
@@ -428,6 +436,27 @@ export const initUI = ({
     });
   }
 
+  if (fillEnabledInput) {
+    fillEnabledInput.addEventListener("change", () => {
+      const layer = getActiveLayer();
+      if (!layer) return;
+      layer.fill = fillEnabledInput.checked;
+      updateFillControls(layer.fill);
+      scheduleRender();
+      saveState(state);
+    });
+  }
+
+  if (fillColorInput) {
+    fillColorInput.addEventListener("input", () => {
+      const layer = getActiveLayer();
+      if (!layer) return;
+      layer.fillColor = fillColorInput.value || "#ffffff";
+      scheduleRender();
+      saveState(state);
+    });
+  }
+
   bindRadioGroup("alignment", "alignment");
   bindRadioGroup("layoutStyle", "layoutStyle");
 
@@ -435,13 +464,19 @@ export const initUI = ({
   const sizeControl = document.getElementById("sizeControl");
   const widthControl = document.getElementById("widthControl");
   const heightControl = document.getElementById("heightControl");
+  const gapXControl = document.getElementById("gapXControl");
+  const gapYControl = document.getElementById("gapYControl");
   const sizeLabel = document.querySelector('label[for="sizeRange"]');
   const gapXLabel = document.getElementById("gapXLabel");
   const gapYLabel = document.getElementById("gapYLabel");
   const gapYUnit = document.getElementById("gapYUnit");
   const innerRadiusControl = document.getElementById("innerRadiusControl");
+  const shapeRotationControl = document.getElementById("shapeRotationControl");
   const alignToRadiusControl = document.getElementById("alignToRadiusControl");
   const alignToRadiusInput = document.getElementById("alignToRadius");
+  const elementGroupBody = document.querySelector(
+    '[data-group="element"] .group-body'
+  );
 
   const applyGapLimits = (shapeType, baseGeometry) => {
     const isLine = shapeType === "line";
@@ -517,6 +552,27 @@ export const initUI = ({
     if (alignToRadiusInput) {
       alignToRadiusInput.checked = Boolean(layer.alignToRadius);
     }
+
+    if (
+      elementGroupBody &&
+      gapXControl &&
+      gapYControl &&
+      innerRadiusControl &&
+      shapeRotationControl
+    ) {
+      if (isRadial) {
+        // Radial order: Items per Ring, Inner Radius, Ring Spacing, Shape Rotation.
+        elementGroupBody.insertBefore(gapYControl, shapeRotationControl);
+        elementGroupBody.insertBefore(innerRadiusControl, shapeRotationControl);
+        elementGroupBody.insertBefore(gapXControl, shapeRotationControl);
+      } else {
+        // Default order: Gap X, Gap Y, Inner Radius (hidden), Shape Rotation.
+        elementGroupBody.insertBefore(gapXControl, gapYControl);
+        elementGroupBody.insertBefore(gapYControl, innerRadiusControl);
+        elementGroupBody.insertBefore(innerRadiusControl, shapeRotationControl);
+      }
+    }
+
     applyGapLimits(layer.shapeType, layer.baseGeometry);
   };
 
@@ -838,6 +894,8 @@ export const initUI = ({
     setNumber("patternRotationNumber", (value) => {
       layer.patternRotation = value;
     });
+    layer.fill = fillEnabledInput?.checked ?? layer.fill;
+    layer.fillColor = fillColorInput?.value || layer.fillColor;
     layer.alignToRadius = alignToRadiusInput?.checked ?? layer.alignToRadius;
     if (layer.baseGeometry === "radial") {
       layer.gapX = clampValue(Number(layer.gapX) || 100, 10, 500);
@@ -915,6 +973,9 @@ export const initUI = ({
         layer.patternRotation
       );
       if (strokeColorInput) strokeColorInput.value = layer.strokeColor;
+      if (fillEnabledInput) fillEnabledInput.checked = Boolean(layer.fill);
+      if (fillColorInput) fillColorInput.value = layer.fillColor || "#ffffff";
+      updateFillControls(Boolean(layer.fill));
       if (alignToRadiusInput) {
         alignToRadiusInput.checked = Boolean(layer.alignToRadius);
       }

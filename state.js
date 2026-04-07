@@ -43,6 +43,8 @@ export const createDefaultLayer = () => ({
   innerRadius: 50,
   weight: 4,
   strokeColor: "#000000",
+  fill: false,
+  fillColor: "#ffffff",
   baseGeometry: "grid",
   layoutStyle: "straight",
   alignToRadius: true,
@@ -154,6 +156,8 @@ export const loadState = () => {
     if (parsed.gapY !== undefined) legacy.gapY = parsed.gapY;
     if (parsed.weight !== undefined) legacy.weight = parsed.weight;
     if (parsed.strokeColor !== undefined) legacy.strokeColor = parsed.strokeColor;
+    if (parsed.fill !== undefined) legacy.fill = parsed.fill;
+    if (parsed.fillColor !== undefined) legacy.fillColor = parsed.fillColor;
     if (parsed.baseGeometry !== undefined) {
       legacy.baseGeometry = parsed.baseGeometry;
     }

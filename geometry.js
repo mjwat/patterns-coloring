@@ -22,7 +22,9 @@ export const drawShape = (
   width,
   height,
   weight,
-  strokeColor
+  strokeColor,
+  fillEnabled,
+  fillColor
 ) => {
   if (!ctx) return;
 
@@ -30,6 +32,7 @@ export const drawShape = (
   ctx.beginPath();
   ctx.lineWidth = weight;
   ctx.strokeStyle = strokeColor || "#000";
+  ctx.fillStyle = fillColor || "#ffffff";
 
   if (type === "circle") {
     const radius = size / 2;
@@ -55,6 +58,9 @@ export const drawShape = (
     ctx.lineCap = "round";
   }
 
+  if (fillEnabled && type !== "line") {
+    ctx.fill();
+  }
   ctx.stroke();
   ctx.restore();
 };
@@ -148,7 +154,9 @@ export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff"
             width,
             height,
             layer.weight,
-            layer.strokeColor
+            layer.strokeColor,
+            layer.fill,
+            layer.fillColor
           );
           ctx.restore();
         }
@@ -188,7 +196,9 @@ export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff"
             width,
             height,
             layer.weight,
-            layer.strokeColor
+            layer.strokeColor,
+            layer.fill,
+            layer.fillColor
           );
           ctx.restore();
         }

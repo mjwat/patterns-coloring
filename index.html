@@ -128,13 +128,6 @@
             </div>
           </div>
 
-        <div class="control">
-          <label class="control-label" for="strokeColor">Color</label>
-          <div class="control-row">
-            <input id="strokeColor" type="color" value="#000000" />
-          </div>
-        </div>
-
         <div class="control" id="sizeControl">
           <label class="control-label" for="sizeRange">Size</label>
           <div class="control-row">
@@ -173,7 +166,30 @@
 
         <div class="settings-separator"></div>
 
-          <div class="control">
+        <div class="control">
+          <label class="control-label" for="strokeColor">Stroke Color</label>
+          <div class="control-row">
+            <input id="strokeColor" type="color" value="#000000" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="checkbox-row">
+            <input id="fillEnabled" type="checkbox" />
+            Fill
+          </label>
+        </div>
+
+        <div id="fillColorControl" class="control">
+          <label class="control-label" for="fillColor">Inner Color</label>
+          <div class="control-row">
+            <input id="fillColor" type="color" value="#ffffff" />
+          </div>
+        </div>
+
+        <div class="settings-separator"></div>
+
+          <div id="gapXControl" class="control">
             <label id="gapXLabel" class="control-label" for="gapXRange">Gap X</label>
             <div class="control-row">
               <input id="gapXRange" type="range" min="-200" max="200" value="100" />
@@ -182,7 +198,7 @@
             </div>
           </div>
 
-          <div class="control">
+          <div id="gapYControl" class="control">
             <label id="gapYLabel" class="control-label" for="gapYRange">Gap Y</label>
             <div class="control-row">
               <input id="gapYRange" type="range" min="-200" max="200" value="100" />
@@ -200,14 +216,7 @@
             </div>
           </div>
 
-          <div id="alignToRadiusControl" class="control">
-            <label class="checkbox-row">
-              <input id="alignToRadius" type="checkbox" checked />
-              Align to Radius
-            </label>
-          </div>
-
-        <div class="control">
+        <div id="shapeRotationControl" class="control">
           <label class="control-label" for="shapeRotationRange">Shape Rotation</label>
           <div class="control-row">
             <input id="shapeRotationRange" type="range" min="-180" max="180" value="0" />
@@ -273,13 +282,11 @@
         
         <div class="settings-separator"></div>
 
-        <div class="control">
-          <label class="control-label" for="patternRotationRange">Pattern Rotation</label>
-          <div class="control-row">
-            <input id="patternRotationRange" type="range" min="-180" max="180" value="0" />
-            <input id="patternRotationNumber" type="number" min="-180" max="180" value="0" />
-            <span class="unit-label">°</span>
-          </div>
+        <div id="alignToRadiusControl" class="control">
+          <label class="checkbox-row">
+            <input id="alignToRadius" type="checkbox" checked />
+            Align to Radius
+          </label>
         </div>
 
         <div class="control">
@@ -297,6 +304,15 @@
             <input id="offsetYRange" type="range" min="-200" max="200" value="0" />
             <input id="offsetYNumber" type="number" min="-400" max="400" value="0" />
             <span class="unit-label">px</span>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="control-label" for="patternRotationRange">Pattern Rotation</label>
+          <div class="control-row">
+            <input id="patternRotationRange" type="range" min="-180" max="180" value="0" />
+            <input id="patternRotationNumber" type="number" min="-180" max="180" value="0" />
+            <span class="unit-label">°</span>
           </div>
         </div>
 
