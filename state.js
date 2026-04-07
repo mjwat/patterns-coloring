@@ -2,18 +2,27 @@ export const STORAGE_KEY = "patternSettings";
 export const GROUP_STATE_KEY = "patternGroupStates";
 
 export const PRESETS = {
+  a1: { width: 7016, height: 9933 },
+  a2: { width: 4961, height: 7016 },
+  a3: { width: 3508, height: 4961 },
   a4: { width: 2480, height: 3508 },
   a5: { width: 1748, height: 2480 },
+  letter_a4: { width: 2550, height: 3300 },
+  square: { width: 2550, height: 2550 },
 };
 
 export const DEFAULT_PRESET = "a4";
-export const DEFAULT_ORIENTATION = "horizontal";
+export const DEFAULT_ORIENTATION = "vertical";
 export const MAX_LAYERS = 5;
 
 export const getPresetSize = (presetKey, orientation) => {
   const preset = PRESETS[presetKey];
   if (!preset) return { width: 800, height: 600 };
   let { width, height } = preset;
+  if (orientation === "square") {
+    const side = Math.max(width, height);
+    return { width: side, height: side };
+  }
   if (orientation === "horizontal") {
     [width, height] = [height, width];
   }
@@ -53,6 +62,8 @@ export const createDefaultState = () => {
       orientation: DEFAULT_ORIENTATION,
       canvasWidth: defaultPageSize.width,
       canvasHeight: defaultPageSize.height,
+      backgroundColor: "#ffffff",
+      withoutBackground: false,
     },
     layers: [{ ...createDefaultLayer(), name: "Layer 1" }],
     activeLayerIndex: 0,
@@ -179,6 +190,8 @@ export const loadState = () => {
         orientation: parsed.orientation || DEFAULT_ORIENTATION,
         canvasWidth: parsed.canvasWidth || defaultPageSize.width,
         canvasHeight: parsed.canvasHeight || defaultPageSize.height,
+        backgroundColor: parsed.backgroundColor || "#ffffff",
+        withoutBackground: Boolean(parsed.withoutBackground),
       },
       layers: [legacy],
       activeLayerIndex: 0,

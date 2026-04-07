@@ -11,6 +11,8 @@ window.addEventListener("load", () => {
 
   const state = loadState() ?? createDefaultState();
   let needsUpdate = true;
+  const getEffectiveBackgroundColor = () =>
+    state.globalSettings.withoutBackground ? "#ffffff" : state.globalSettings.backgroundColor || "#ffffff";
 
   const requestRender = () => {
     needsUpdate = true;
@@ -18,7 +20,12 @@ window.addEventListener("load", () => {
 
   const renderExport = () => {
     if (!exportCtx || !exportCanvas) return;
-    generatePattern(exportCtx, exportCanvas, state.layers);
+    generatePattern(
+      exportCtx,
+      exportCanvas,
+      state.layers,
+      getEffectiveBackgroundColor()
+    );
   };
 
   initUI({
@@ -32,7 +39,12 @@ window.addEventListener("load", () => {
 
   const renderLoop = () => {
     if (needsUpdate) {
-      generatePattern(ctx, canvas, state.layers);
+      generatePattern(
+        ctx,
+        canvas,
+        state.layers,
+        getEffectiveBackgroundColor()
+      );
       needsUpdate = false;
     }
     requestAnimationFrame(renderLoop);

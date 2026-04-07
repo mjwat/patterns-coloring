@@ -110,8 +110,30 @@ export const initUI = ({
 
   const widthInput = document.getElementById("canvasWidth");
   const heightInput = document.getElementById("canvasHeight");
+  const pagePresetSelect = document.getElementById("pagePresetSelect");
+  const pageBackgroundColorInput = document.getElementById("pageBackgroundColor");
+  const pageBackgroundColorControl = document.getElementById(
+    "pageBackgroundColorControl"
+  );
+  const pageBackgroundModeRadios = document.querySelectorAll(
+    'input[name="pageBackgroundMode"]'
+  );
   const widthLabel = document.getElementById("widthLabel");
   const heightLabel = document.getElementById("heightLabel");
+  const getSelectedOrientation = () =>
+    document.querySelector('input[name="orientation"]:checked')?.value ||
+    DEFAULT_ORIENTATION;
+  const getEffectiveBackgroundColor = () =>
+    state.globalSettings.withoutBackground
+      ? "#ffffff"
+      : state.globalSettings.backgroundColor || "#ffffff";
+  const applyBackgroundModeUI = (withoutBackground) => {
+    if (pageBackgroundColorControl) {
+      pageBackgroundColorControl.style.display = withoutBackground
+        ? "none"
+        : "grid";
+    }
+  };
 
   const updateCanvasSize = () => {
     const width = Number(widthInput?.value) || canvas.width;
@@ -130,6 +152,17 @@ export const initUI = ({
   };
 
   let isUpdatingOrientation = false;
+  const setOrientationSelection = (value) => {
+    const radio = document.querySelector(
+      `input[name="orientation"][value="${value}"]`
+    );
+    if (!radio || radio.checked) return;
+    isUpdatingOrientation = true;
+    radio.checked = true;
+    state.globalSettings.orientation = value;
+    isUpdatingOrientation = false;
+  };
+
   const updateOrientationRadios = () => {
     if (!widthInput || !heightInput) return;
     const width = Number(widthInput.value);
@@ -137,10 +170,10 @@ export const initUI = ({
     if (!width || !height) return;
 
     let target = null;
-    if (width > height) {
+    if (width === height) {
+      target = "square";
+    } else if (width > height) {
       target = "horizontal";
-    } else if (height > width) {
-      target = "vertical";
     } else {
       target = "vertical";
     }
@@ -157,11 +190,13 @@ export const initUI = ({
   };
 
   const setPresetSelection = (value) => {
-    const presetRadio = document.querySelector(
-      `input[name="pagePreset"][value="${value}"]`
+    if (!pagePresetSelect) return;
+    const hasOption = Array.from(pagePresetSelect.options).some(
+      (option) => option.value === value
     );
-    if (presetRadio) presetRadio.checked = true;
-    state.globalSettings.pagePreset = value;
+    const nextValue = hasOption ? value : "custom";
+    pagePresetSelect.value = nextValue;
+    state.globalSettings.pagePreset = nextValue;
   };
 
   const debouncedGlobalNumber = debounce(() => {
@@ -169,29 +204,58 @@ export const initUI = ({
     saveState(state);
   }, 400);
 
+  pageBackgroundColorInput?.addEventListener("input", () => {
+    const color = pageBackgroundColorInput.value || "#ffffff";
+    state.globalSettings.backgroundColor = color;
+    scheduleRender();
+    saveState(state);
+  });
+
+  pageBackgroundModeRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      state.globalSettings.withoutBackground = radio.value === "without";
+      applyBackgroundModeUI(state.globalSettings.withoutBackground);
+      scheduleRender();
+      saveState(state);
+    });
+  });
+
   widthInput?.addEventListener("input", () => {
-    setPresetSelection("manual");
+    if (getSelectedOrientation() === "square" && heightInput && widthInput) {
+      heightInput.value = widthInput.value;
+    }
+    setPresetSelection("custom");
     updateCanvasSize();
     updateOrientationRadios();
     debouncedGlobalNumber();
   });
   heightInput?.addEventListener("input", () => {
-    setPresetSelection("manual");
+    if (getSelectedOrientation() === "square" && widthInput && heightInput) {
+      widthInput.value = heightInput.value;
+    }
+    setPresetSelection("custom");
     updateCanvasSize();
     updateOrientationRadios();
     debouncedGlobalNumber();
   });
 
   const applyPreset = (presetKey) => {
+    if (presetKey === "custom") {
+      setPresetSelection("custom");
+      return;
+    }
+    if (presetKey === "square") {
+      setOrientationSelection("square");
+    }
     const preset = getPresetSize(
       presetKey,
-      document.querySelector('input[name="orientation"]:checked')?.value ||
-        DEFAULT_ORIENTATION
+      getSelectedOrientation()
     );
     if (!widthInput || !heightInput) return;
     widthInput.value = String(preset.width);
     heightInput.value = String(preset.height);
-    state.globalSettings.pagePreset = presetKey;
+    setPresetSelection(presetKey);
     updateCanvasSize();
     updateOrientationRadios();
     markDirty();
@@ -205,21 +269,35 @@ export const initUI = ({
       if (!radio.checked || !widthInput || !heightInput) return;
       if (isUpdatingOrientation) return;
       state.globalSettings.orientation = radio.value;
-      const currentWidth = widthInput.value;
-      widthInput.value = heightInput.value;
-      heightInput.value = currentWidth;
+      const currentWidth = Number(widthInput.value);
+      const currentHeight = Number(heightInput.value);
+      if (radio.value === "square") {
+        const side = Math.max(currentWidth, currentHeight);
+        widthInput.value = String(side);
+        heightInput.value = String(side);
+      } else if (currentWidth === currentHeight) {
+        if (radio.value === "horizontal") {
+          widthInput.value = String(currentWidth + 1);
+        } else if (radio.value === "vertical") {
+          heightInput.value = String(currentHeight + 1);
+        }
+      } else if (radio.value === "horizontal" && currentWidth < currentHeight) {
+        widthInput.value = String(currentHeight);
+        heightInput.value = String(currentWidth);
+      } else if (radio.value === "vertical" && currentHeight < currentWidth) {
+        widthInput.value = String(currentHeight);
+        heightInput.value = String(currentWidth);
+      }
+      setPresetSelection("custom");
       updateCanvasSize();
+      updateOrientationRadios();
       markDirty();
     });
   });
 
-  const presetRadios = document.querySelectorAll('input[name="pagePreset"]');
-  presetRadios.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (!radio.checked) return;
-      if (radio.value === "manual") return;
-      applyPreset(radio.value);
-    });
+  pagePresetSelect?.addEventListener("change", () => {
+    const value = pagePresetSelect.value || "custom";
+    applyPreset(value);
   });
 
   const setRadioValue = (name, value) => {
@@ -775,7 +853,16 @@ export const initUI = ({
   const applySettingsToUI = () => {
     if (widthInput) widthInput.value = String(state.globalSettings.canvasWidth);
     if (heightInput) heightInput.value = String(state.globalSettings.canvasHeight);
-    setRadioValue("pagePreset", state.globalSettings.pagePreset);
+    if (pageBackgroundColorInput) {
+      pageBackgroundColorInput.value =
+        state.globalSettings.backgroundColor || "#ffffff";
+    }
+    const backgroundMode = state.globalSettings.withoutBackground
+      ? "without"
+      : "with";
+    setRadioValue("pageBackgroundMode", backgroundMode);
+    applyBackgroundModeUI(state.globalSettings.withoutBackground);
+    setPresetSelection(state.globalSettings.pagePreset);
     setRadioValue("orientation", state.globalSettings.orientation);
 
     const layer = getActiveLayer();
@@ -920,13 +1007,13 @@ export const initUI = ({
       document.getElementById("exportFormat")?.value || "png";
     if (renderExport) renderExport();
     const targetCanvas = exportCanvas || canvas;
-    const createWhiteBackgroundCanvas = (sourceCanvas) => {
+    const createBackgroundCanvas = (sourceCanvas, fillColor) => {
       const flattenedCanvas = document.createElement("canvas");
       flattenedCanvas.width = sourceCanvas.width;
       flattenedCanvas.height = sourceCanvas.height;
       const flattenedCtx = flattenedCanvas.getContext("2d");
       if (flattenedCtx) {
-        flattenedCtx.fillStyle = "#ffffff";
+        flattenedCtx.fillStyle = fillColor || "#ffffff";
         flattenedCtx.fillRect(
           0,
           0,
@@ -939,7 +1026,10 @@ export const initUI = ({
     };
 
     if (exportFormat === "pdf") {
-      const flattenedCanvas = createWhiteBackgroundCanvas(targetCanvas);
+      const flattenedCanvas = createBackgroundCanvas(
+        targetCanvas,
+        getEffectiveBackgroundColor()
+      );
       const jpegDataUrl = flattenedCanvas.toDataURL("image/jpeg", 0.95);
       const jpegBytes = dataUrlToBytes(jpegDataUrl);
       const pdfBlob = buildPdfFromJpeg(
@@ -955,7 +1045,10 @@ export const initUI = ({
     const ext = isJpg ? "jpg" : "png";
     link.download = `coloring-page_${timestamp}.${ext}`;
     if (isJpg) {
-      const flattenedCanvas = createWhiteBackgroundCanvas(targetCanvas);
+      const flattenedCanvas = createBackgroundCanvas(
+        targetCanvas,
+        getEffectiveBackgroundColor()
+      );
       link.href = flattenedCanvas.toDataURL("image/jpeg", 0.95);
     } else {
       link.href = targetCanvas.toDataURL(mime, undefined);

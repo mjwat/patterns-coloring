@@ -59,9 +59,13 @@ export const drawShape = (
   ctx.restore();
 };
 
-export const generatePattern = (ctx, canvas, layers) => {
+export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff") => {
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.fillStyle = backgroundColor || "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
   const diagonal = Math.hypot(canvasWidth, canvasHeight);

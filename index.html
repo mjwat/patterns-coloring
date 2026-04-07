@@ -23,19 +23,47 @@
             Page
           </h3>
           <div class="group-body">
-          <div class="radio-group">
-            <label class="control-label">Preset</label>
+        <div class="radio-group">
+            <label class="control-label">Orientation</label>
             <div class="radio-row">
-              <label><input type="radio" name="pagePreset" value="a4" checked /> A4</label>
-              <label><input type="radio" name="pagePreset" value="a5" /> A5</label>
-              <label><input type="radio" name="pagePreset" value="manual" /> Manual</label>
+              <label class="radio-with-icon" title="Horizontal">
+                <input type="radio" name="orientation" value="horizontal" />
+                <img src="icons/horizontal.png" alt="" />
+                Hor
+              </label>
+              <label class="radio-with-icon" title="Vertical">
+                <input type="radio" name="orientation" value="vertical" checked />
+                <img src="icons/vertical.png" alt="" />
+                Vert
+              </label>
+              <label class="radio-with-icon" title="Square">
+                <input type="radio" name="orientation" value="square" />
+                <img src="icons/square.png" alt="" />
+                Squ
+              </label>
+            </div>
+          </div>
+
+          <div class="control">
+            <label class="control-label" for="pagePresetSelect">Preset</label>
+            <div class="control-row">
+              <select id="pagePresetSelect">
+                <option value="a1">A1 - 59.4×84.1 cm</option>
+                <option value="a2">A2 - 42.0×59.4 cm</option>
+                <option value="a3">A3 - 29.7×42.0 cm</option>
+                <option value="a4" selected>A4 - 21.0×29.7 cm</option>
+                <option value="a5">A5 - 14.8×21.0 cm</option>
+                <option value="letter_a4">Letter A4 - 8.5×11 in</option>
+                <option value="square">Square - 8.5×8.5 in</option>
+                <option value="custom">Custom</option>
+              </select>
             </div>
           </div>
         
           <div class="control">
             <label class="control-label" for="canvasWidth">Width</label>
             <div class="control-row">
-              <input id="canvasWidth" type="number" min="100" max="5000" value="800" />
+              <input id="canvasWidth" type="number" min="100" max="12000" value="800" />
               <span class="unit-label">px</span>
             </div>
           </div>
@@ -43,16 +71,25 @@
           <div class="control">
             <label class="control-label" for="canvasHeight">Height</label>
             <div class="control-row">
-              <input id="canvasHeight" type="number" min="100" max="5000" value="600" />
+              <input id="canvasHeight" type="number" min="100" max="12000" value="600" />
               <span class="unit-label">px</span>
             </div>
           </div>
 
-        <div class="radio-group">
-            <label class="control-label">Orientation</label>
+          <div class="settings-separator"></div>
+
+          <div class="radio-group">
+            <label class="control-label">Background</label>
             <div class="radio-row">
-              <label><input type="radio" name="orientation" value="horizontal" checked /> Horizontal</label>
-              <label><input type="radio" name="orientation" value="vertical" /> Vertical</label>
+              <label><input type="radio" name="pageBackgroundMode" value="without" checked /> Without</label>
+              <label><input type="radio" name="pageBackgroundMode" value="with" /> With</label>
+            </div>
+          </div>
+
+          <div id="pageBackgroundColorControl" class="control">
+            <label class="control-label" for="pageBackgroundColor">Color</label>
+            <div class="control-row">
+              <input id="pageBackgroundColor" type="color" value="#ffffff" />
             </div>
           </div>
           </div>
