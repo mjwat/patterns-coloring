@@ -137,7 +137,7 @@
         <div class="settings-separator"></div>
 
           <div class="control">
-            <label class="control-label" for="gapXRange">Gap X</label>
+            <label id="gapXLabel" class="control-label" for="gapXRange">Gap X</label>
             <div class="control-row">
               <input id="gapXRange" type="range" min="-200" max="200" value="100" />
               <input id="gapXNumber" type="number" min="-400" max="400" value="100" />
@@ -146,12 +146,28 @@
           </div>
 
           <div class="control">
-            <label class="control-label" for="gapYRange">Gap Y</label>
+            <label id="gapYLabel" class="control-label" for="gapYRange">Gap Y</label>
             <div class="control-row">
               <input id="gapYRange" type="range" min="-200" max="200" value="100" />
               <input id="gapYNumber" type="number" min="-400" max="400" value="100" />
+              <span id="gapYUnit" class="unit-label">px</span>
+            </div>
+          </div>
+
+          <div id="innerRadiusControl" class="control">
+            <label class="control-label" for="innerRadiusRange">Inner Radius</label>
+            <div class="control-row">
+              <input id="innerRadiusRange" type="range" min="20" max="300" value="50" />
+              <input id="innerRadiusNumber" type="number" min="10" max="500" value="50" />
               <span class="unit-label">px</span>
             </div>
+          </div>
+
+          <div id="alignToRadiusControl" class="control">
+            <label class="checkbox-row">
+              <input id="alignToRadius" type="checkbox" checked />
+              Align to Radius
+            </label>
           </div>
 
         <div class="control">
@@ -174,15 +190,47 @@
           <div class="radio-group">
             <label class="control-label">Alignment</label>
             <div class="radio-row">
-              <label><input type="radio" name="alignment" value="top-left" checked /> Top-Left</label>
-              <label><input type="radio" name="alignment" value="center" /> Center</label>
+              <label class="radio-with-icon">
+                <input type="radio" name="alignment" value="top-left" checked />
+                <img src="icons/top-left.png" alt="" />
+                Top-Left
+              </label>
+              <label class="radio-with-icon">
+                <input type="radio" name="alignment" value="center" />
+                <img src="icons/center.png" alt="" />
+                Center
+              </label>
             </div>
           </div>
         <div class="radio-group">
-          <label class="control-label">Layout</label>
+          <label class="control-label">Base Geometry</label>
           <div class="radio-row">
-            <label><input type="radio" name="layout" value="grid" checked /> Grid</label>
-            <label><input type="radio" name="layout" value="brick" /> Brick</label>
+            <label class="radio-with-icon">
+              <input type="radio" name="baseGeometry" value="grid" checked />
+              <img src="icons/grid.png" alt="" />
+              Grid
+            </label>
+            <label class="radio-with-icon">
+              <input type="radio" name="baseGeometry" value="radial" />
+              <img src="icons/radial.png" alt="" />
+              Radial
+            </label>
+          </div>
+        </div>
+
+        <div class="radio-group">
+          <label class="control-label">Layout Style</label>
+          <div class="radio-row">
+            <label class="radio-with-icon">
+              <input type="radio" name="layoutStyle" value="straight" checked />
+              <img src="icons/grid.png" alt="" />
+              Straight
+            </label>
+            <label class="radio-with-icon">
+              <input type="radio" name="layoutStyle" value="offset" />
+              <img src="icons/bricks.png" alt="" />
+              Offset
+            </label>
           </div>
         </div>
         

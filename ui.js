@@ -274,6 +274,7 @@ export const initUI = ({
   bindLinkedInputs("heightRange", "heightNumber", "height");
   bindLinkedInputs("gapXRange", "gapXNumber", "gapX");
   bindLinkedInputs("gapYRange", "gapYNumber", "gapY");
+  bindLinkedInputs("innerRadiusRange", "innerRadiusNumber", "innerRadius");
   bindLinkedInputs("weightRange", "weightNumber", "weight");
   bindLinkedInputs("offsetXRange", "offsetXNumber", "offsetX");
   bindLinkedInputs("offsetYRange", "offsetYNumber", "offsetY");
@@ -300,22 +301,25 @@ export const initUI = ({
     });
   }
 
-  bindRadioGroup("layout", "layout");
   bindRadioGroup("alignment", "alignment");
+  bindRadioGroup("layoutStyle", "layoutStyle");
 
   const shapeTypeSelect = document.getElementById("shapeTypeSelect");
   const sizeControl = document.getElementById("sizeControl");
   const widthControl = document.getElementById("widthControl");
   const heightControl = document.getElementById("heightControl");
   const sizeLabel = document.querySelector('label[for="sizeRange"]');
-  const applyGapLimits = (shapeType) => {
-    const isLine = shapeType === "line";
-    const rangeMin = isLine ? 0 : -200;
-    const rangeMax = isLine ? 500 : 200;
-    const numberMin = isLine ? 0 : -400;
-    const numberMax = isLine ? 500 : 400;
+  const gapXLabel = document.getElementById("gapXLabel");
+  const gapYLabel = document.getElementById("gapYLabel");
+  const gapYUnit = document.getElementById("gapYUnit");
+  const innerRadiusControl = document.getElementById("innerRadiusControl");
+  const alignToRadiusControl = document.getElementById("alignToRadiusControl");
+  const alignToRadiusInput = document.getElementById("alignToRadius");
 
-    const updateLimits = (rangeId, numberId) => {
+  const applyGapLimits = (shapeType, baseGeometry) => {
+    const isLine = shapeType === "line";
+    const isRadial = baseGeometry === "radial";
+    const updateLimits = (rangeId, numberId, rangeMin, rangeMax, numberMin, numberMax) => {
       const range = document.getElementById(rangeId);
       const number = document.getElementById(numberId);
       if (range) {
@@ -329,17 +333,64 @@ export const initUI = ({
       const layer = getActiveLayer();
       if (!layer) return;
       const key = rangeId === "gapXRange" ? "gapX" : "gapY";
-      const clamped = clampValue(
-        Number(layer[key]),
-        numberMin,
-        numberMax
-      );
+      const clamped = clampValue(Number(layer[key]), numberMin, numberMax);
       layer[key] = clamped;
       setLinkedValue(rangeId, numberId, clamped);
     };
 
-    updateLimits("gapXRange", "gapXNumber");
-    updateLimits("gapYRange", "gapYNumber");
+    const gapXRangeMin = isRadial ? 50 : isLine ? 0 : -200;
+    const gapXRangeMax = isRadial ? 300 : isLine ? 500 : 200;
+    const gapXNumberMin = isRadial ? 10 : isLine ? 0 : -400;
+    const gapXNumberMax = isRadial ? 500 : isLine ? 500 : 400;
+    updateLimits(
+      "gapXRange",
+      "gapXNumber",
+      gapXRangeMin,
+      gapXRangeMax,
+      gapXNumberMin,
+      gapXNumberMax
+    );
+
+    if (isRadial) {
+      updateLimits("gapYRange", "gapYNumber", 4, 36, 2, 120);
+    } else {
+      const gapYRangeMin = isLine ? 0 : -200;
+      const gapYRangeMax = isLine ? 500 : 200;
+      const gapYNumberMin = isLine ? 0 : -400;
+      const gapYNumberMax = isLine ? 500 : 400;
+      updateLimits(
+        "gapYRange",
+        "gapYNumber",
+        gapYRangeMin,
+        gapYRangeMax,
+        gapYNumberMin,
+        gapYNumberMax
+      );
+    }
+  };
+
+  const updatePatternModeControls = (layer) => {
+    if (!layer) return;
+    const isRadial = layer.baseGeometry === "radial";
+    if (gapXLabel) {
+      gapXLabel.textContent = isRadial ? "Ring Spacing" : "Gap X";
+    }
+    if (gapYLabel) {
+      gapYLabel.textContent = isRadial ? "Items per Ring" : "Gap Y";
+    }
+    if (gapYUnit) {
+      gapYUnit.textContent = isRadial ? "items" : "px";
+    }
+    if (innerRadiusControl) {
+      innerRadiusControl.style.display = isRadial ? "block" : "none";
+    }
+    if (alignToRadiusControl) {
+      alignToRadiusControl.style.display = isRadial ? "block" : "none";
+    }
+    if (alignToRadiusInput) {
+      alignToRadiusInput.checked = Boolean(layer.alignToRadius);
+    }
+    applyGapLimits(layer.shapeType, layer.baseGeometry);
   };
 
   const updateShapeControls = (shapeType) => {
@@ -350,7 +401,8 @@ export const initUI = ({
     if (sizeLabel) {
       sizeLabel.textContent = shapeType === "line" ? "Length" : "Size";
     }
-    applyGapLimits(shapeType);
+    const layer = getActiveLayer();
+    applyGapLimits(shapeType, layer?.baseGeometry || "grid");
   };
 
   if (shapeTypeSelect) {
@@ -359,10 +411,54 @@ export const initUI = ({
       if (!layer) return;
       layer.shapeType = shapeTypeSelect.value;
       updateShapeControls(layer.shapeType);
+      updatePatternModeControls(layer);
       scheduleRender();
       saveState(state);
     });
   }
+
+  if (alignToRadiusInput) {
+    alignToRadiusInput.addEventListener("change", () => {
+      const layer = getActiveLayer();
+      if (!layer) return;
+      layer.alignToRadius = alignToRadiusInput.checked;
+      scheduleRender();
+      saveState(state);
+    });
+  }
+
+  const baseGeometryRadios = document.querySelectorAll(
+    'input[name="baseGeometry"]'
+  );
+  baseGeometryRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      const layer = getActiveLayer();
+      if (!layer) return;
+      const previousGeometry = layer.baseGeometry;
+      layer.baseGeometry = radio.value;
+      if (layer.baseGeometry === "radial" && previousGeometry !== "radial") {
+        if (!Number.isFinite(Number(layer.gapX))) {
+          layer.gapX = 100;
+        }
+        if (!Number.isFinite(Number(layer.gapY)) || Number(layer.gapY) === 100) {
+          layer.gapY = 8;
+        }
+        if (!Number.isFinite(Number(layer.innerRadius))) {
+          layer.innerRadius = 50;
+        }
+      }
+      if (layer.baseGeometry !== "radial") {
+        layer.alignToRadius = true;
+      }
+      if (!Number.isFinite(Number(layer.innerRadius))) {
+        layer.innerRadius = 50;
+      }
+      updatePatternModeControls(layer);
+      scheduleRender();
+      saveState(state);
+    });
+  });
 
   const layersList = document.getElementById("layersList");
   const addLayerButton = document.getElementById("addLayer");
@@ -573,9 +669,12 @@ export const initUI = ({
       if (!Number.isNaN(raw)) setter(raw);
     };
     layer.shapeType = shapeTypeSelect?.value || layer.shapeType;
-    layer.layout =
-      document.querySelector('input[name="layout"]:checked')?.value ||
-      layer.layout;
+    layer.baseGeometry =
+      document.querySelector('input[name="baseGeometry"]:checked')?.value ||
+      layer.baseGeometry;
+    layer.layoutStyle =
+      document.querySelector('input[name="layoutStyle"]:checked')?.value ||
+      layer.layoutStyle;
     layer.alignment =
       document.querySelector('input[name="alignment"]:checked')?.value ||
       layer.alignment;
@@ -600,6 +699,9 @@ export const initUI = ({
     setNumber("gapYNumber", (value) => {
       layer.gapY = value;
     });
+    setNumber("innerRadiusNumber", (value) => {
+      layer.innerRadius = value;
+    });
     setNumber("weightNumber", (value) => {
       layer.weight = value;
     });
@@ -609,6 +711,12 @@ export const initUI = ({
     setNumber("patternRotationNumber", (value) => {
       layer.patternRotation = value;
     });
+    layer.alignToRadius = alignToRadiusInput?.checked ?? layer.alignToRadius;
+    if (layer.baseGeometry === "radial") {
+      layer.gapX = clampValue(Number(layer.gapX) || 100, 10, 500);
+      layer.gapY = clampValue(Number(layer.gapY) || 8, 2, 120);
+      layer.innerRadius = clampValue(Number(layer.innerRadius) || 50, 10, 500);
+    }
     layer.strokeColor = getValue("strokeColor") || layer.strokeColor;
   };
 
@@ -648,15 +756,17 @@ export const initUI = ({
     if (layer) {
       if (shapeTypeSelect) shapeTypeSelect.value = layer.shapeType;
       updateShapeControls(layer.shapeType);
-      setRadioValue("layout", layer.layout);
+      setRadioValue("baseGeometry", layer.baseGeometry);
+      setRadioValue("layoutStyle", layer.layoutStyle);
       setRadioValue("alignment", layer.alignment);
       setLinkedValue("sizeRange", "sizeNumber", layer.size);
-    setLinkedValue("widthRange", "widthNumber", layer.width);
-    setLinkedValue("heightRange", "heightNumber", layer.height);
-    setLinkedValue("offsetXRange", "offsetXNumber", layer.offsetX);
-    setLinkedValue("offsetYRange", "offsetYNumber", layer.offsetY);
-    setLinkedValue("gapXRange", "gapXNumber", layer.gapX);
-    setLinkedValue("gapYRange", "gapYNumber", layer.gapY);
+      setLinkedValue("widthRange", "widthNumber", layer.width);
+      setLinkedValue("heightRange", "heightNumber", layer.height);
+      setLinkedValue("offsetXRange", "offsetXNumber", layer.offsetX);
+      setLinkedValue("offsetYRange", "offsetYNumber", layer.offsetY);
+      setLinkedValue("gapXRange", "gapXNumber", layer.gapX);
+      setLinkedValue("gapYRange", "gapYNumber", layer.gapY);
+      setLinkedValue("innerRadiusRange", "innerRadiusNumber", layer.innerRadius);
       setLinkedValue("weightRange", "weightNumber", layer.weight);
       setLinkedValue(
         "shapeRotationRange",
@@ -669,6 +779,10 @@ export const initUI = ({
         layer.patternRotation
       );
       if (strokeColorInput) strokeColorInput.value = layer.strokeColor;
+      if (alignToRadiusInput) {
+        alignToRadiusInput.checked = Boolean(layer.alignToRadius);
+      }
+      updatePatternModeControls(layer);
     }
     updateCanvasSize();
     updateOrientationRadios();

@@ -31,9 +31,12 @@ export const createDefaultLayer = () => ({
   offsetY: 0,
   gapX: 100,
   gapY: 100,
+  innerRadius: 50,
   weight: 4,
   strokeColor: "#000000",
-  layout: "grid",
+  baseGeometry: "grid",
+  layoutStyle: "straight",
+  alignToRadius: true,
   alignment: "top-left",
   shapeRotation: 0,
   patternRotation: 0,
@@ -73,11 +76,23 @@ export const loadState = () => {
 
     if (Array.isArray(parsed.layers)) {
       const layers = parsed.layers
-        .map((layer, index) => ({
-          ...createDefaultLayer(),
-          name: layer.name || `Layer ${index + 1}`,
-          ...layer,
-        }))
+        .map((layer, index) => {
+          const migratedLayer = {
+            ...createDefaultLayer(),
+            name: layer.name || `Layer ${index + 1}`,
+            ...layer,
+          };
+          if (layer.layout && !layer.layoutStyle) {
+            if (layer.layout === "brick") {
+              migratedLayer.baseGeometry = "grid";
+              migratedLayer.layoutStyle = "offset";
+            } else if (layer.layout === "grid") {
+              migratedLayer.baseGeometry = "grid";
+              migratedLayer.layoutStyle = "straight";
+            }
+          }
+          return migratedLayer;
+        })
         .slice(0, MAX_LAYERS);
       const activeLayerIndex =
         typeof parsed.activeLayerIndex === "number" &&
@@ -128,7 +143,25 @@ export const loadState = () => {
     if (parsed.gapY !== undefined) legacy.gapY = parsed.gapY;
     if (parsed.weight !== undefined) legacy.weight = parsed.weight;
     if (parsed.strokeColor !== undefined) legacy.strokeColor = parsed.strokeColor;
-    if (parsed.layout !== undefined) legacy.layout = parsed.layout;
+    if (parsed.baseGeometry !== undefined) {
+      legacy.baseGeometry = parsed.baseGeometry;
+    }
+    if (parsed.layoutStyle !== undefined) {
+      legacy.layoutStyle = parsed.layoutStyle;
+    }
+    if (parsed.layout !== undefined) {
+      if (parsed.layout === "brick") {
+        legacy.baseGeometry = "grid";
+        legacy.layoutStyle = "offset";
+      } else if (parsed.layout === "grid") {
+        legacy.baseGeometry = "grid";
+        legacy.layoutStyle = "straight";
+      }
+    }
+    if (parsed.innerRadius !== undefined) legacy.innerRadius = parsed.innerRadius;
+    if (parsed.alignToRadius !== undefined) {
+      legacy.alignToRadius = parsed.alignToRadius;
+    }
     if (parsed.alignment !== undefined) legacy.alignment = parsed.alignment;
     if (parsed.shapeRotation !== undefined) {
       legacy.shapeRotation = parsed.shapeRotation;
