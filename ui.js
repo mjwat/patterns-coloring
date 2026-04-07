@@ -245,16 +245,15 @@ export const initUI = ({
       setPresetSelection("custom");
       return;
     }
-    if (presetKey === "square") {
-      setOrientationSelection("square");
-    }
+    const presetOrientation = presetKey === "square" ? "square" : "vertical";
     const preset = getPresetSize(
       presetKey,
-      getSelectedOrientation()
+      presetOrientation
     );
     if (!widthInput || !heightInput) return;
     widthInput.value = String(preset.width);
     heightInput.value = String(preset.height);
+    setOrientationSelection(presetOrientation);
     setPresetSelection(presetKey);
     updateCanvasSize();
     updateOrientationRadios();
@@ -269,26 +268,50 @@ export const initUI = ({
       if (!radio.checked || !widthInput || !heightInput) return;
       if (isUpdatingOrientation) return;
       state.globalSettings.orientation = radio.value;
-      const currentWidth = Number(widthInput.value);
-      const currentHeight = Number(heightInput.value);
-      if (radio.value === "square") {
-        const side = Math.max(currentWidth, currentHeight);
-        widthInput.value = String(side);
-        heightInput.value = String(side);
-      } else if (currentWidth === currentHeight) {
-        if (radio.value === "horizontal") {
-          widthInput.value = String(currentWidth + 1);
-        } else if (radio.value === "vertical") {
-          heightInput.value = String(currentHeight + 1);
+      const presetKey = pagePresetSelect?.value || state.globalSettings.pagePreset;
+      const forceCustomForSquare =
+        radio.value === "square" &&
+        presetKey &&
+        presetKey !== "custom" &&
+        presetKey !== "square";
+      const forceCustomFromSquarePreset =
+        presetKey === "square" && radio.value !== "square";
+      const shouldForceCustom =
+        forceCustomForSquare || forceCustomFromSquarePreset;
+
+      if (presetKey && presetKey !== "custom" && !shouldForceCustom) {
+        const preset = getPresetSize(presetKey, radio.value);
+        widthInput.value = String(preset.width);
+        heightInput.value = String(preset.height);
+        setPresetSelection(presetKey);
+      } else {
+        const currentWidth = Number(widthInput.value);
+        const currentHeight = Number(heightInput.value);
+        if (radio.value === "square") {
+          const side = Math.max(currentWidth, currentHeight);
+          widthInput.value = String(side);
+          heightInput.value = String(side);
+        } else if (currentWidth === currentHeight) {
+          if (radio.value === "horizontal") {
+            widthInput.value = String(currentWidth + 1);
+          } else if (radio.value === "vertical") {
+            heightInput.value = String(currentHeight + 1);
+          }
+        } else if (
+          radio.value === "horizontal" &&
+          currentWidth < currentHeight
+        ) {
+          widthInput.value = String(currentHeight);
+          heightInput.value = String(currentWidth);
+        } else if (
+          radio.value === "vertical" &&
+          currentHeight < currentWidth
+        ) {
+          widthInput.value = String(currentHeight);
+          heightInput.value = String(currentWidth);
         }
-      } else if (radio.value === "horizontal" && currentWidth < currentHeight) {
-        widthInput.value = String(currentHeight);
-        heightInput.value = String(currentWidth);
-      } else if (radio.value === "vertical" && currentHeight < currentWidth) {
-        widthInput.value = String(currentHeight);
-        heightInput.value = String(currentWidth);
+        setPresetSelection("custom");
       }
-      setPresetSelection("custom");
       updateCanvasSize();
       updateOrientationRadios();
       markDirty();
