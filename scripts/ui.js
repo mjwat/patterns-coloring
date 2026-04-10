@@ -753,6 +753,16 @@ export const initUI = ({
 
   const layersList = document.getElementById("layersList");
   const addLayerButton = document.getElementById("addLayer");
+  const layerIdByRef = new WeakMap();
+  let nextLayerDomId = 1;
+
+  const getLayerDomId = (layer) => {
+    if (!layerIdByRef.has(layer)) {
+      layerIdByRef.set(layer, String(nextLayerDomId));
+      nextLayerDomId += 1;
+    }
+    return layerIdByRef.get(layer);
+  };
 
   const duplicateLayer = (index) => {
     if (state.layers.length >= MAX_LAYERS) return;
@@ -772,10 +782,15 @@ export const initUI = ({
 
   const renderLayerList = () => {
     if (!layersList) return;
+    const previousPositions = new Map();
+    layersList.querySelectorAll(".layer-item[data-layer-id]").forEach((node) => {
+      previousPositions.set(node.dataset.layerId, node.getBoundingClientRect().top);
+    });
     layersList.innerHTML = "";
     state.layers.forEach((layer, index) => {
       const item = document.createElement("div");
       item.className = "layer-item";
+      item.dataset.layerId = getLayerDomId(layer);
       if (index === state.activeLayerIndex) {
         item.classList.add("active");
       }
@@ -955,6 +970,25 @@ export const initUI = ({
         addLayerButton.disabled = true;
       }
     }
+    requestAnimationFrame(() => {
+      layersList.querySelectorAll(".layer-item[data-layer-id]").forEach((node) => {
+        const previousTop = previousPositions.get(node.dataset.layerId);
+        if (previousTop === undefined) return;
+        const currentTop = node.getBoundingClientRect().top;
+        const deltaY = previousTop - currentTop;
+        if (Math.abs(deltaY) < 1) return;
+        node.animate(
+          [
+            { transform: `translateY(${deltaY}px)` },
+            { transform: "translateY(0)" }
+          ],
+          {
+            duration: 280,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+          }
+        );
+      });
+    });
   };
 
   const syncLayerFromInputs = (layer) => {

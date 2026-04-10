@@ -105,6 +105,29 @@
           </h3>
           <div class="group-body">
           <div class="control">
+            <label class="control-label" for="strokeColor">Stroke Color</label>
+            <div class="control-row">
+              <input id="strokeColor" type="color" />
+            </div>
+          </div>
+
+          <div class="control">
+            <label class="checkbox-row">
+              <input id="fillEnabled" type="checkbox" />
+              Fill
+            </label>
+          </div>
+
+          <div id="fillColorControl" class="control">
+            <label class="control-label" for="fillColor">Inner Color</label>
+            <div class="control-row">
+              <input id="fillColor" type="color" />
+            </div>
+          </div>
+
+          <div class="settings-separator"></div>
+
+          <div class="control">
             <label class="control-label" for="shapeTypeSelect">Shape</label>
             <div class="control-row">
               <select id="shapeTypeSelect"></select>
@@ -144,29 +167,6 @@
             <input id="weightRange" type="range" />
             <input id="weightNumber" type="number" />
             <span class="unit-label">px</span>
-          </div>
-        </div>
-
-        <div class="settings-separator"></div>
-
-        <div class="control">
-          <label class="control-label" for="strokeColor">Stroke Color</label>
-          <div class="control-row">
-            <input id="strokeColor" type="color" />
-          </div>
-        </div>
-
-        <div class="control">
-          <label class="checkbox-row">
-            <input id="fillEnabled" type="checkbox" />
-            Fill
-          </label>
-        </div>
-
-        <div id="fillColorControl" class="control">
-          <label class="control-label" for="fillColor">Inner Color</label>
-          <div class="control-row">
-            <input id="fillColor" type="color" />
           </div>
         </div>
 
