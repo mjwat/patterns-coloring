@@ -78,6 +78,7 @@ export const createDefaultLayer = () => {
     layoutStyle: patternDefaults.layoutStyle,
     alignToRadius: patternDefaults.alignToRadius,
     alignment: patternDefaults.alignment,
+    gridAnchor: patternDefaults.gridAnchor || "element",
     shapeRotation: config.controls.element.rotation.default,
     patternRotation: config.controls.pattern.rotation.default
   };

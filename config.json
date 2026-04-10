@@ -67,13 +67,13 @@
       "fillColor": { "id": "fillColor", "default": "#ffffff" },
       "gap": {
         "x": {
-          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 2000, "default": 100 },
+          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 4000, "default": 100 },
           "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 500, "default": 100 },
           "radial": { "rangeMin": 0, "rangeMax": 300, "numberMin": -100, "numberMax": 500, "default": 100 }
         },
         "y": {
-          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 2000, "default": 100 },
-          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 500, "default": 100  },
+          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 4000, "default": 100 },
+          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 2000, "default": 100  },
           "radial": { "rangeMin": 4, "rangeMax": 36, "numberMin": 2, "numberMax": 120, "default": 36  }
         }
       },
@@ -95,7 +95,8 @@
         "baseGeometry": "grid",
         "layoutStyle": "straight",
         "alignToRadius": true,
-        "alignment": "top-left"
+        "alignment": "top-left",
+        "gridAnchor": "element"
       },
       "position": {
         "x": {
@@ -117,7 +118,7 @@
     }
   },
   "layers": {
-    "max": 5,
+    "max": 15,
     "defaultNamePrefix": "Layer",
     "copySuffix": "Copy"
   },

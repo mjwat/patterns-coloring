@@ -532,6 +532,7 @@ export const initUI = ({
 
   bindRadioGroup("alignment", "alignment");
   bindRadioGroup("layoutStyle", "layoutStyle");
+  bindRadioGroup("gridAnchor", "gridAnchor");
 
   const shapeTypeSelect = document.getElementById("shapeTypeSelect");
   const sizeControl = document.getElementById("sizeControl");
@@ -547,6 +548,7 @@ export const initUI = ({
   const shapeRotationControl = document.getElementById("shapeRotationControl");
   const alignToRadiusControl = document.getElementById("alignToRadiusControl");
   const alignToRadiusInput = document.getElementById("alignToRadius");
+  const gridAnchorControl = document.getElementById("gridAnchorControl");
   const elementGroupBody = document.querySelector(
     '[data-group="element"] .group-body'
   );
@@ -602,6 +604,15 @@ export const initUI = ({
     );
   };
 
+  const updateGridAnchorControl = (layer) => {
+    if (!gridAnchorControl || !layer) return;
+    const showControl =
+      layer.alignment === "center" &&
+      layer.baseGeometry === "grid" &&
+      layer.layoutStyle === "straight";
+    gridAnchorControl.style.display = showControl ? "grid" : "none";
+  };
+
   const updatePatternModeControls = (layer) => {
     if (!layer) return;
     const isRadial = layer.baseGeometry === "radial";
@@ -623,6 +634,7 @@ export const initUI = ({
     if (alignToRadiusInput) {
       alignToRadiusInput.checked = layer.alignToRadius === true;
     }
+    updateGridAnchorControl(layer);
 
     if (
       elementGroupBody &&
@@ -680,6 +692,28 @@ export const initUI = ({
       saveState(state);
     });
   }
+
+  const refreshAnchorVisibilityFromRadios = () => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    layer.alignment =
+      document.querySelector('input[name="alignment"]:checked')?.value ||
+      layer.alignment;
+    layer.layoutStyle =
+      document.querySelector('input[name="layoutStyle"]:checked')?.value ||
+      layer.layoutStyle;
+    layer.baseGeometry =
+      document.querySelector('input[name="baseGeometry"]:checked')?.value ||
+      layer.baseGeometry;
+    updateGridAnchorControl(layer);
+  };
+
+  document.querySelectorAll('input[name="alignment"]').forEach((radio) => {
+    radio.addEventListener("change", refreshAnchorVisibilityFromRadios);
+  });
+  document.querySelectorAll('input[name="layoutStyle"]').forEach((radio) => {
+    radio.addEventListener("change", refreshAnchorVisibilityFromRadios);
+  });
 
   const baseGeometryRadios = document.querySelectorAll(
     'input[name="baseGeometry"]'
@@ -940,6 +974,10 @@ export const initUI = ({
     layer.alignment =
       document.querySelector('input[name="alignment"]:checked')?.value ||
       layer.alignment;
+    layer.gridAnchor =
+      document.querySelector('input[name="gridAnchor"]:checked')?.value ||
+      layer.gridAnchor ||
+      "element";
     setNumber("sizeNumber", (value) => {
       layer.size = value;
     });
@@ -1044,6 +1082,7 @@ export const initUI = ({
       setRadioValue("baseGeometry", layer.baseGeometry);
       setRadioValue("layoutStyle", layer.layoutStyle);
       setRadioValue("alignment", layer.alignment);
+      setRadioValue("gridAnchor", layer.gridAnchor || "element");
       setLinkedValue("sizeRange", "sizeNumber", layer.size);
       setLinkedValue("widthRange", "widthNumber", layer.width);
       setLinkedValue("heightRange", "heightNumber", layer.height);

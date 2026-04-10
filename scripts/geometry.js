@@ -221,6 +221,14 @@ export const generatePattern = (
     } else {
       const stepX = Math.max(gridMinStep, (isLine ? size : width) + gapX);
       const stepY = Math.max(gridMinStep, (isLine ? 0 : height) + gapY);
+      const useIntersectionAnchor =
+        layer.alignment === "center" &&
+        layoutStyle === "straight" &&
+        (layer.gridAnchor || "element") === "intersection";
+      const anchorShiftX = useIntersectionAnchor ? stepX / 2 : 0;
+      const anchorShiftY = useIntersectionAnchor ? stepY / 2 : 0;
+      const gridOriginX = anchorX + anchorShiftX - offsetX;
+      const gridOriginY = anchorY + anchorShiftY - offsetY;
       const extraX =
         halfDiagonal + Math.abs(offsetX) + stepX * gridBleedStepMultiplier;
       const extraY =
@@ -231,25 +239,25 @@ export const generatePattern = (
       const maxY = extraY;
 
       const startCol =
-        Math.floor((minX - (anchorX - offsetX)) / stepX) -
+        Math.floor((minX - gridOriginX) / stepX) -
         gridEdgePaddingCells;
       const endCol =
-        Math.ceil((maxX - (anchorX - offsetX)) / stepX) +
+        Math.ceil((maxX - gridOriginX) / stepX) +
         gridEdgePaddingCells;
       const startRow =
-        Math.floor((minY - (anchorY - offsetY)) / stepY) -
+        Math.floor((minY - gridOriginY) / stepY) -
         gridEdgePaddingCells;
       const endRow =
-        Math.ceil((maxY - (anchorY - offsetY)) / stepY) +
+        Math.ceil((maxY - gridOriginY) / stepY) +
         gridEdgePaddingCells;
 
       for (let row = startRow; row <= endRow; row += 1) {
         const rowOffset =
           layoutStyle === "offset" && Math.abs(row) % 2 === 0 ? stepX / 2 : 0;
-        const y = anchorY + row * stepY - offsetY;
+        const y = gridOriginY + row * stepY;
 
         for (let col = startCol; col <= endCol; col += 1) {
-          const x = anchorX + col * stepX - offsetX + rowOffset;
+          const x = gridOriginX + col * stepX + rowOffset;
           ctx.save();
           ctx.translate(x, y);
           ctx.rotate(shapeRadians);
