@@ -1,14 +1,14 @@
 import {
-  GROUP_STATE_KEY,
-  DEFAULT_PRESET,
-  DEFAULT_ORIENTATION,
-  MAX_LAYERS,
   getPresetSize,
+  getGroupStateKey,
+  getFooterStateKey,
+  getMaxLayers,
   createDefaultLayer,
   resetState,
 } from "./state.js";
 
 export const initUI = ({
+  config,
   state,
   canvas,
   exportCanvas,
@@ -17,10 +17,13 @@ export const initUI = ({
   renderExport,
 }) => {
   if (!canvas) return;
-  const FOOTER_STATE_KEY = "patternFooterCollapsed";
+  const GROUP_STATE_KEY = getGroupStateKey();
+  const FOOTER_STATE_KEY = getFooterStateKey();
+  const MAX_LAYERS = getMaxLayers();
+  const DEFAULT_ORIENTATION = config.controls.canvas.defaults.orientation;
+  const GAP = config.controls.element.gap;
 
   const getActiveLayer = () => state.layers[state.activeLayerIndex];
-  // Current debounce: 100ms (sliders), 400ms (number/text)
   const markDirty = () => {
     scheduleRender();
     saveState(state);
@@ -40,6 +43,69 @@ export const initUI = ({
   const scheduleRender = () => {
     requestAnimationFrame(() => requestRender());
   };
+
+  const applyControlAttributes = () => {
+    const applyNode = (node, inheritedDefault) => {
+      if (!node || typeof node !== "object") return;
+      if (node.id) {
+        const element = document.getElementById(node.id);
+        if (!element) return;
+        ["min", "max", "step"].forEach((key) => {
+          if (node[key] !== undefined) {
+            element.setAttribute(key, String(node[key]));
+          }
+        });
+        const defaultValue =
+          node.default !== undefined ? node.default : inheritedDefault;
+        if (defaultValue !== undefined) {
+          element.setAttribute("value", String(defaultValue));
+        }
+        return;
+      }
+      const nextDefault =
+        node.default !== undefined ? node.default : inheritedDefault;
+      Object.values(node).forEach((child) => applyNode(child, nextDefault));
+    };
+    applyNode(config.controls || {}, undefined);
+  };
+
+  const populateSelect = (id, options, selectedValue) => {
+    const select = document.getElementById(id);
+    if (!select || !Array.isArray(options)) return;
+    select.innerHTML = "";
+    options.forEach((option) => {
+      const node = document.createElement("option");
+      node.value = option.value;
+      node.textContent = option.label;
+      if (option.value === selectedValue) {
+        node.selected = true;
+      }
+      select.appendChild(node);
+    });
+  };
+
+  applyControlAttributes();
+  const pagePresetOptions = Object.entries(config.controls.canvas.presets).map(
+    ([value, preset]) => ({
+      value,
+      label: preset.label || value
+    })
+  );
+  populateSelect(
+    "pagePresetSelect",
+    pagePresetOptions,
+    config.controls.canvas.defaults.preset
+  );
+  populateSelect(
+    "shapeTypeSelect",
+    config.controls.element.shapeOptions,
+    config.controls.element.defaults.shapeType
+  );
+  populateSelect(
+    "exportFormat",
+    config.export.formats,
+    config.export.defaultFormat
+  );
 
   const groups = document.querySelectorAll(".settings-group");
   const loadGroupStates = () => {
@@ -125,8 +191,8 @@ export const initUI = ({
     DEFAULT_ORIENTATION;
   const getEffectiveBackgroundColor = () =>
     state.globalSettings.withoutBackground
-      ? "#ffffff"
-      : state.globalSettings.backgroundColor || "#ffffff";
+      ? config.controls.canvas.backgroundColor.default
+      : state.globalSettings.backgroundColor || config.controls.canvas.backgroundColor.default;
   const applyBackgroundModeUI = (withoutBackground) => {
     if (pageBackgroundColorControl) {
       pageBackgroundColorControl.style.display = withoutBackground
@@ -205,10 +271,11 @@ export const initUI = ({
   const debouncedGlobalNumber = debounce(() => {
     scheduleRender();
     saveState(state);
-  }, 400);
+  }, config.debounce.inputMs);
 
   pageBackgroundColorInput?.addEventListener("input", () => {
-    const color = pageBackgroundColorInput.value || "#ffffff";
+    const color =
+      pageBackgroundColorInput.value || config.controls.canvas.backgroundColor.default;
     state.globalSettings.backgroundColor = color;
     scheduleRender();
     saveState(state);
@@ -245,7 +312,10 @@ export const initUI = ({
       setPresetSelection("custom");
       return;
     }
-    const presetOrientation = presetKey === "square" ? "square" : "vertical";
+    const presetOrientation =
+      presetKey === "square"
+        ? "square"
+        : config.controls.canvas.defaults.presetOrientation;
     const preset = getPresetSize(
       presetKey,
       presetOrientation
@@ -347,12 +417,12 @@ export const initUI = ({
     const debouncedRange = debounce(() => {
       scheduleRender();
       saveState(state);
-    }, 100);
+    }, config.debounce.rangeMs);
 
     const debouncedNumber = debounce(() => {
       scheduleRender();
       saveState(state);
-    }, 400);
+    }, config.debounce.inputMs);
 
     const updateValue = (value, source) => {
       const numericValue = Number(value);
@@ -432,7 +502,9 @@ export const initUI = ({
 
   if (strokeColorInput) {
     strokeColorInput.addEventListener("input", () => {
-      applyStrokeColor(strokeColorInput.value || "#000000");
+      applyStrokeColor(
+        strokeColorInput.value || config.controls.element.strokeColor.default
+      );
     });
   }
 
@@ -451,7 +523,8 @@ export const initUI = ({
     fillColorInput.addEventListener("input", () => {
       const layer = getActiveLayer();
       if (!layer) return;
-      layer.fillColor = fillColorInput.value || "#ffffff";
+      layer.fillColor =
+        fillColorInput.value || config.controls.element.fillColor.default;
       scheduleRender();
       saveState(state);
     });
@@ -499,36 +572,34 @@ export const initUI = ({
       layer[key] = clamped;
       setLinkedValue(rangeId, numberId, clamped);
     };
+    const gapXLimits = isRadial
+      ? GAP.x.radial
+      : isLine
+        ? GAP.x.line
+        : GAP.x.grid;
+    const gapYLimits = isRadial
+      ? GAP.y.radial
+      : isLine
+        ? GAP.y.line
+        : GAP.y.grid;
 
-    const gapXRangeMin = isRadial ? 50 : isLine ? 0 : -200;
-    const gapXRangeMax = isRadial ? 300 : isLine ? 500 : 200;
-    const gapXNumberMin = isRadial ? 10 : isLine ? 0 : -400;
-    const gapXNumberMax = isRadial ? 500 : isLine ? 500 : 400;
     updateLimits(
       "gapXRange",
       "gapXNumber",
-      gapXRangeMin,
-      gapXRangeMax,
-      gapXNumberMin,
-      gapXNumberMax
+      gapXLimits.rangeMin,
+      gapXLimits.rangeMax,
+      gapXLimits.numberMin,
+      gapXLimits.numberMax
     );
 
-    if (isRadial) {
-      updateLimits("gapYRange", "gapYNumber", 4, 36, 2, 120);
-    } else {
-      const gapYRangeMin = isLine ? 0 : -200;
-      const gapYRangeMax = isLine ? 500 : 200;
-      const gapYNumberMin = isLine ? 0 : -400;
-      const gapYNumberMax = isLine ? 500 : 400;
-      updateLimits(
-        "gapYRange",
-        "gapYNumber",
-        gapYRangeMin,
-        gapYRangeMax,
-        gapYNumberMin,
-        gapYNumberMax
-      );
-    }
+    updateLimits(
+      "gapYRange",
+      "gapYNumber",
+      gapYLimits.rangeMin,
+      gapYLimits.rangeMax,
+      gapYLimits.numberMin,
+      gapYLimits.numberMax
+    );
   };
 
   const updatePatternModeControls = (layer) => {
@@ -550,7 +621,7 @@ export const initUI = ({
       alignToRadiusControl.style.display = isRadial ? "block" : "none";
     }
     if (alignToRadiusInput) {
-      alignToRadiusInput.checked = Boolean(layer.alignToRadius);
+      alignToRadiusInput.checked = layer.alignToRadius === true;
     }
 
     if (
@@ -622,20 +693,23 @@ export const initUI = ({
       layer.baseGeometry = radio.value;
       if (layer.baseGeometry === "radial" && previousGeometry !== "radial") {
         if (!Number.isFinite(Number(layer.gapX))) {
-          layer.gapX = 100;
+          layer.gapX = config.controls.element.gap.x.radial.default;
         }
-        if (!Number.isFinite(Number(layer.gapY)) || Number(layer.gapY) === 100) {
-          layer.gapY = 8;
+        if (
+          !Number.isFinite(Number(layer.gapY)) ||
+          Number(layer.gapY) === config.controls.element.gap.y.grid.default
+        ) {
+          layer.gapY = config.controls.element.gap.y.radial.default;
         }
         if (!Number.isFinite(Number(layer.innerRadius))) {
-          layer.innerRadius = 50;
+          layer.innerRadius = config.controls.element.radial.innerRadius.default;
         }
       }
       if (layer.baseGeometry !== "radial") {
         layer.alignToRadius = true;
       }
       if (!Number.isFinite(Number(layer.innerRadius))) {
-        layer.innerRadius = 50;
+        layer.innerRadius = config.controls.element.radial.innerRadius.default;
       }
       updatePatternModeControls(layer);
       scheduleRender();
@@ -652,7 +726,7 @@ export const initUI = ({
     if (!source) return;
     const clone = {
       ...source,
-      name: `${source.name} Copy`,
+      name: `${source.name} ${config.layers.copySuffix}`,
     };
     state.layers.splice(index + 1, 0, clone);
     state.activeLayerIndex = index + 1;
@@ -730,18 +804,22 @@ export const initUI = ({
 
       const nameDisplay = document.createElement("span");
       nameDisplay.className = "layer-name";
-      nameDisplay.textContent = layer.name || `Layer ${index + 1}`;
+      nameDisplay.textContent =
+        layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`;
 
       const nameInput = document.createElement("input");
       nameInput.className = "layer-name-input";
       nameInput.type = "text";
-      nameInput.value = layer.name || `Layer ${index + 1}`;
+      nameInput.value =
+        layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`;
       nameInput.style.display = "none";
       nameContainer.appendChild(nameDisplay);
       nameContainer.appendChild(nameInput);
 
       const finishRename = () => {
-        const nextName = nameInput.value.trim() || `Layer ${index + 1}`;
+        const nextName =
+          nameInput.value.trim() ||
+          `${config.layers.defaultNamePrefix} ${index + 1}`;
         layer.name = nextName;
         nameDisplay.textContent = nextName;
         nameInput.style.display = "none";
@@ -751,7 +829,8 @@ export const initUI = ({
 
       renameButton.addEventListener("click", (event) => {
         event.stopPropagation();
-        nameInput.value = layer.name || `Layer ${index + 1}`;
+        nameInput.value =
+          layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`;
         nameDisplay.style.display = "none";
         nameInput.style.display = "inline";
         nameInput.focus();
@@ -777,7 +856,7 @@ export const initUI = ({
       duplicateButton.type = "button";
       const duplicateIcon = document.createElement("img");
       duplicateIcon.src = "icons/duplicate.png";
-      duplicateIcon.alt = "Copy";
+      duplicateIcon.alt = config.layers.copySuffix;
       duplicateButton.appendChild(duplicateIcon);
       duplicateButton.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -898,9 +977,25 @@ export const initUI = ({
     layer.fillColor = fillColorInput?.value || layer.fillColor;
     layer.alignToRadius = alignToRadiusInput?.checked ?? layer.alignToRadius;
     if (layer.baseGeometry === "radial") {
-      layer.gapX = clampValue(Number(layer.gapX) || 100, 10, 500);
-      layer.gapY = clampValue(Number(layer.gapY) || 8, 2, 120);
-      layer.innerRadius = clampValue(Number(layer.innerRadius) || 50, 10, 500);
+      const radialLimits = {
+        x: config.controls.element.gap.x.radial,
+        y: config.controls.element.gap.y.radial
+      };
+      layer.gapX = clampValue(
+        Number(layer.gapX) || config.controls.element.gap.x.radial.default,
+        radialLimits.x.numberMin,
+        radialLimits.x.numberMax
+      );
+      layer.gapY = clampValue(
+        Number(layer.gapY) || config.controls.element.gap.y.radial.default,
+        radialLimits.y.numberMin,
+        radialLimits.y.numberMax
+      );
+      layer.innerRadius = clampValue(
+        Number(layer.innerRadius) || config.controls.element.radial.innerRadius.default,
+        config.controls.element.radial.innerRadius.number.min,
+        config.controls.element.radial.innerRadius.number.max
+      );
     }
     layer.strokeColor = getValue("strokeColor") || layer.strokeColor;
   };
@@ -921,7 +1016,7 @@ export const initUI = ({
       if (state.layers.length >= MAX_LAYERS) return;
       state.layers.push({
         ...createDefaultLayer(),
-        name: `Layer ${state.layers.length + 1}`,
+        name: `${config.layers.defaultNamePrefix} ${state.layers.length + 1}`,
       });
       state.activeLayerIndex = state.layers.length - 1;
       renderLayerList();
@@ -936,7 +1031,7 @@ export const initUI = ({
     if (heightInput) heightInput.value = String(state.globalSettings.canvasHeight);
     if (pageBackgroundColorInput) {
       pageBackgroundColorInput.value =
-        state.globalSettings.backgroundColor || "#ffffff";
+        state.globalSettings.backgroundColor || config.controls.canvas.backgroundColor.default;
     }
     applyBackgroundModeUI(state.globalSettings.withoutBackground);
     setPresetSelection(state.globalSettings.pagePreset);
@@ -970,10 +1065,13 @@ export const initUI = ({
       );
       if (strokeColorInput) strokeColorInput.value = layer.strokeColor;
       if (fillEnabledInput) fillEnabledInput.checked = Boolean(layer.fill);
-      if (fillColorInput) fillColorInput.value = layer.fillColor || "#ffffff";
+      if (fillColorInput) {
+        fillColorInput.value =
+          layer.fillColor || config.controls.element.fillColor.default;
+      }
       updateFillControls(Boolean(layer.fill));
       if (alignToRadiusInput) {
-        alignToRadiusInput.checked = Boolean(layer.alignToRadius);
+        alignToRadiusInput.checked = layer.alignToRadius === true;
       }
       updatePatternModeControls(layer);
     }
@@ -1031,7 +1129,7 @@ export const initUI = ({
         offset += bytes.length;
       };
 
-      const pointsPerPx = 72 / 96;
+      const pointsPerPx = config.export.pdfPointsPerPx;
       const pageWidth = Math.max(1, Math.round(imageWidthPx * pointsPerPx));
       const pageHeight = Math.max(1, Math.round(imageHeightPx * pointsPerPx));
 
@@ -1084,7 +1182,7 @@ export const initUI = ({
       now.getMinutes()
     )}-${pad(now.getSeconds())}`;
     const exportFormat =
-      document.getElementById("exportFormat")?.value || "png";
+      document.getElementById("exportFormat")?.value || config.export.defaultFormat;
     const exportBackgroundOverride =
       exportFormat === "png" && state.globalSettings.withoutBackground
         ? null
@@ -1097,7 +1195,8 @@ export const initUI = ({
       flattenedCanvas.height = sourceCanvas.height;
       const flattenedCtx = flattenedCanvas.getContext("2d");
       if (flattenedCtx) {
-        flattenedCtx.fillStyle = fillColor || "#ffffff";
+        flattenedCtx.fillStyle =
+          fillColor || config.controls.canvas.backgroundColor.default;
         flattenedCtx.fillRect(
           0,
           0,
@@ -1114,7 +1213,10 @@ export const initUI = ({
         targetCanvas,
         getEffectiveBackgroundColor()
       );
-      const jpegDataUrl = flattenedCanvas.toDataURL("image/jpeg", 0.95);
+      const jpegDataUrl = flattenedCanvas.toDataURL(
+        "image/jpeg",
+        config.export.jpgQuality
+      );
       const jpegBytes = dataUrlToBytes(jpegDataUrl);
       const pdfBlob = buildPdfFromJpeg(
         jpegBytes,
@@ -1133,7 +1235,10 @@ export const initUI = ({
         targetCanvas,
         getEffectiveBackgroundColor()
       );
-      link.href = flattenedCanvas.toDataURL("image/jpeg", 0.95);
+      link.href = flattenedCanvas.toDataURL(
+        "image/jpeg",
+        config.export.jpgQuality
+      );
     } else {
       link.href = targetCanvas.toDataURL(mime, undefined);
     }

@@ -1,0 +1,144 @@
+{
+  "storage": {
+    "stateKey": "patternSettings",
+    "groupStateKey": "patternGroupStates",
+    "footerStateKey": "patternFooterCollapsed"
+  },
+  "debounce": {
+    "rangeMs": 100,
+    "inputMs": 400
+  },
+  "controls": {
+    "canvas": {
+      "width": { "id": "canvasWidth", "min": 100, "max": 12000, "default": 800 },
+      "height": { "id": "canvasHeight", "min": 100, "max": 12000, "default": 600 },
+      "backgroundColor": { "id": "pageBackgroundColor", "default": "#ffffff" },
+      "defaults": {
+        "preset": "a4",
+        "orientation": "vertical",
+        "presetOrientation": "vertical",
+        "withoutBackground": true
+      },
+      "presets": {
+        "a1": { "label": "A1 - 59.4×84.1 cm", "width": 7016, "height": 9933 },
+        "a2": { "label": "A2 - 42.0×59.4 cm", "width": 4961, "height": 7016 },
+        "a3": { "label": "A3 - 29.7×42.0 cm", "width": 3508, "height": 4961 },
+        "a4": { "label": "A4 - 21.0×29.7 cm", "width": 2480, "height": 3508 },
+        "a5": { "label": "A5 - 14.8×21.0 cm", "width": 1748, "height": 2480 },
+        "letter_a4": { "label": "Letter A4 - 8.5×11 in", "width": 2550, "height": 3300 },
+        "square": { "label": "Square - 8.5×8.5 in", "width": 2550, "height": 2550 },
+        "custom": { "label": "Custom" }
+      }
+    },
+    "element": {
+      "shapeOptions": [
+        { "value": "circle", "label": "Circle" },
+        { "value": "square", "label": "Square" },
+        { "value": "rectangle", "label": "Rectangle" },
+        { "value": "oval", "label": "Oval" },
+        { "value": "hexagon", "label": "Hexagon" },
+        { "value": "line", "label": "Line" }
+      ],
+      "defaults": {
+        "shapeType": "circle",
+        "fill": false
+      },
+      "size": {
+        "default": 100,
+        "range": { "id": "sizeRange", "min": 10, "max": 500 },
+        "number": { "id": "sizeNumber", "min": 1, "max": 3000 }
+      },
+      "width": {
+        "default": 100,
+        "range": { "id": "widthRange", "min": 1, "max": 500 },
+        "number": { "id": "widthNumber", "min": 1, "max": 500 }
+      },
+      "height": {
+        "default": 100,
+        "range": { "id": "heightRange", "min": 1, "max": 500 },
+        "number": { "id": "heightNumber", "min": 1, "max": 500 }
+      },
+      "weight": {
+        "default": 4,
+        "range": { "id": "weightRange", "min": 1, "max": 20 },
+        "number": { "id": "weightNumber", "min": 1, "max": 100 }
+      },
+      "strokeColor": { "id": "strokeColor", "default": "#000000" },
+      "fillColor": { "id": "fillColor", "default": "#ffffff" },
+      "gap": {
+        "x": {
+          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 2000, "default": 100 },
+          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 500, "default": 100 },
+          "radial": { "rangeMin": 0, "rangeMax": 300, "numberMin": -100, "numberMax": 500, "default": 100 }
+        },
+        "y": {
+          "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 2000, "default": 100 },
+          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 500, "default": 100  },
+          "radial": { "rangeMin": 4, "rangeMax": 36, "numberMin": 2, "numberMax": 120, "default": 36  }
+        }
+      },
+      "radial": {
+        "innerRadius": {
+          "default": 200,
+          "range": { "id": "innerRadiusRange", "min": 20, "max": 300 },
+          "number": { "id": "innerRadiusNumber", "min": 10, "max": 500 }
+        }
+      },
+      "rotation": {
+        "default": 0,
+        "range": { "id": "shapeRotationRange", "min": -180, "max": 180 },
+        "number": { "id": "shapeRotationNumber", "min": -180, "max": 180 }
+      }
+    },
+    "pattern": {
+      "defaults": {
+        "baseGeometry": "grid",
+        "layoutStyle": "straight",
+        "alignToRadius": true,
+        "alignment": "top-left"
+      },
+      "position": {
+        "x": {
+          "default": 0,
+          "range": { "id": "offsetXRange", "min": -200, "max": 200 },
+          "number": { "id": "offsetXNumber", "min": -4000, "max": 4000 }
+        },
+        "y": {
+          "default": 0,
+          "range": { "id": "offsetYRange", "min": -200, "max": 200 },
+          "number": { "id": "offsetYNumber", "min": -4000, "max": 4000 }
+        }
+      },
+      "rotation": {
+        "default": 0,
+        "range": { "id": "patternRotationRange", "min": -180, "max": 180 },
+        "number": { "id": "patternRotationNumber", "min": -180, "max": 180 }
+      }
+    }
+  },
+  "layers": {
+    "max": 5,
+    "defaultNamePrefix": "Layer",
+    "copySuffix": "Copy"
+  },
+  "render": {
+    "grid": {
+      "minStep": 1,
+      "edgePaddingCells": 2,
+      "bleedStepMultiplier": 2
+    },
+    "radial": {
+      "minItemsPerRing": 2
+    }
+  },
+  "export": {
+    "formats": [
+      { "value": "png", "label": "PNG" },
+      { "value": "jpg", "label": "JPG" },
+      { "value": "pdf", "label": "PDF" }
+    ],
+    "defaultFormat": "png",
+    "jpgQuality": 0.95,
+    "pdfPointsPerPx": 0.75
+  }
+}

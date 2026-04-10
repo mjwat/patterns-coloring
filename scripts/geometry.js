@@ -13,6 +13,21 @@ const drawPolygon = (ctx, x, y, radius, sides) => {
   ctx.closePath();
 };
 
+const getRadialShapeOffset = (shapeType) => {
+  if (shapeType === "hexagon") {
+    // Use a 30deg phase shift so radial alignment is visually distinct.
+    return Math.PI / 6;
+  }
+  return 0;
+};
+
+const getRadialUnalignedPhase = (shapeType) => {
+  if (shapeType === "hexagon") {
+    return 0;
+  }
+  return 0;
+};
+
 export const drawShape = (
   ctx,
   x,
@@ -31,8 +46,12 @@ export const drawShape = (
   ctx.save();
   ctx.beginPath();
   ctx.lineWidth = weight;
-  ctx.strokeStyle = strokeColor || "#000";
-  ctx.fillStyle = fillColor || "#ffffff";
+  if (strokeColor !== undefined && strokeColor !== null) {
+    ctx.strokeStyle = strokeColor;
+  }
+  if (fillColor !== undefined && fillColor !== null) {
+    ctx.fillStyle = fillColor;
+  }
 
   if (type === "circle") {
     const radius = size / 2;
@@ -65,12 +84,33 @@ export const drawShape = (
   ctx.restore();
 };
 
-export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff") => {
+export const generatePattern = (
+  ctx,
+  canvas,
+  layers,
+  backgroundColor = null,
+  config = {}
+) => {
   if (!ctx || !canvas) return;
+  const renderConfig = config.render || config;
+  const elementControls = config.controls?.element || {};
+  const gridMinStep = Number(renderConfig.grid?.minStep);
+  const gridEdgePaddingCells = Number(renderConfig.grid?.edgePaddingCells);
+  const gridBleedStepMultiplier = Number(renderConfig.grid?.bleedStepMultiplier);
+  const radialConfig = renderConfig.radial || {};
+  const radialGapLimits = elementControls.gap?.x?.radial || {};
+  const radialInnerRadiusLimits = elementControls.radial?.innerRadius?.number || {};
+  const minRingSpacing = Number(radialGapLimits.numberMin);
+  const minItemsPerRing = Number(radialConfig.minItemsPerRing);
+  const defaultRingSpacing = Number(elementControls.gap?.x?.radial?.default);
+  const defaultItemsPerRing = Number(elementControls.gap?.y?.radial?.default);
+  const minInnerRadius = Number(radialInnerRadiusLimits.min);
+  const defaultInnerRadius = Number(elementControls.radial?.innerRadius?.default);
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (backgroundColor !== null) {
     ctx.save();
-    ctx.fillStyle = backgroundColor || "#ffffff";
+    ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
   }
@@ -118,23 +158,35 @@ export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff"
     ctx.rotate(patternRadians);
 
     if (baseGeometry === "radial") {
-      const ringSpacing = Math.max(10, Number.isFinite(gapX) ? gapX : 100);
-      const itemsPerRing = Math.max(2, Math.round(Number.isFinite(gapY) ? gapY : 8));
-      const innerRadius = Math.max(
-        10,
-        Number.isFinite(Number(layer.innerRadius)) ? Number(layer.innerRadius) : 50
+      const ringGap = Math.max(
+        minRingSpacing,
+        Number.isFinite(gapX) ? gapX : defaultRingSpacing
       );
-      const alignToRadius = layer.alignToRadius !== false;
+      const itemsPerRing = Math.max(
+        minItemsPerRing,
+        Math.round(Number.isFinite(gapY) ? gapY : defaultItemsPerRing)
+      );
+      const innerRadius = Math.max(
+        minInnerRadius,
+        Number.isFinite(Number(layer.innerRadius))
+          ? Number(layer.innerRadius)
+          : defaultInnerRadius
+      );
+      const alignToRadius = layer.alignToRadius === true;
+      const radialShapeOffset = getRadialShapeOffset(layer.shapeType);
+      const radialUnalignedPhase = getRadialUnalignedPhase(layer.shapeType);
       const originX = anchorX - offsetX;
       const originY = anchorY - offsetY;
       const shapeExtent = Math.max(size, width, height);
+      // Radial step uses element span + gap so spacing is edge-to-edge.
+      const ringStep = Math.max(1, shapeExtent + ringGap);
       const maxRadius =
         Math.hypot(originX, originY) +
         halfDiagonal +
-        Math.max(shapeExtent, ringSpacing) * 2;
+        Math.max(shapeExtent, ringStep) * 2;
 
       let ringIndex = 0;
-      for (let radius = innerRadius; radius <= maxRadius; radius += ringSpacing) {
+      for (let radius = innerRadius; radius <= maxRadius; radius += ringStep) {
         const angleStep = (Math.PI * 2) / itemsPerRing;
         const startAngle =
           layoutStyle === "offset" && ringIndex % 2 === 0 ? angleStep / 2 : 0;
@@ -143,7 +195,9 @@ export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff"
           const angle = startAngle + itemIndex * angleStep;
           const x = originX + Math.cos(angle) * radius;
           const y = originY + Math.sin(angle) * radius;
-          const rotation = alignToRadius ? angle + shapeRadians : shapeRadians;
+          const rotation = alignToRadius
+            ? angle + radialShapeOffset + shapeRadians
+            : radialUnalignedPhase;
           ctx.save();
           ctx.translate(x, y);
           ctx.rotate(rotation);
@@ -165,19 +219,29 @@ export const generatePattern = (ctx, canvas, layers, backgroundColor = "#ffffff"
         ringIndex += 1;
       }
     } else {
-      const stepX = Math.max(1, (isLine ? size : width) + gapX);
-      const stepY = Math.max(1, (isLine ? 0 : height) + gapY);
-      const extraX = halfDiagonal + Math.abs(offsetX) + stepX * 2;
-      const extraY = halfDiagonal + Math.abs(offsetY) + stepY * 2;
+      const stepX = Math.max(gridMinStep, (isLine ? size : width) + gapX);
+      const stepY = Math.max(gridMinStep, (isLine ? 0 : height) + gapY);
+      const extraX =
+        halfDiagonal + Math.abs(offsetX) + stepX * gridBleedStepMultiplier;
+      const extraY =
+        halfDiagonal + Math.abs(offsetY) + stepY * gridBleedStepMultiplier;
       const minX = -extraX;
       const maxX = extraX;
       const minY = -extraY;
       const maxY = extraY;
 
-      const startCol = Math.floor((minX - (anchorX - offsetX)) / stepX) - 2;
-      const endCol = Math.ceil((maxX - (anchorX - offsetX)) / stepX) + 2;
-      const startRow = Math.floor((minY - (anchorY - offsetY)) / stepY) - 2;
-      const endRow = Math.ceil((maxY - (anchorY - offsetY)) / stepY) + 2;
+      const startCol =
+        Math.floor((minX - (anchorX - offsetX)) / stepX) -
+        gridEdgePaddingCells;
+      const endCol =
+        Math.ceil((maxX - (anchorX - offsetX)) / stepX) +
+        gridEdgePaddingCells;
+      const startRow =
+        Math.floor((minY - (anchorY - offsetY)) / stepY) -
+        gridEdgePaddingCells;
+      const endRow =
+        Math.ceil((maxY - (anchorY - offsetY)) / stepY) +
+        gridEdgePaddingCells;
 
       for (let row = startRow; row <= endRow; row += 1) {
         const rowOffset =

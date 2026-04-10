@@ -32,7 +32,7 @@
                 Hor
               </label>
               <label class="radio-with-icon" title="Vertical">
-                <input type="radio" name="orientation" value="vertical" checked />
+                <input type="radio" name="orientation" value="vertical" />
                 <img src="icons/vertical.png" alt="" />
                 Vert
               </label>
@@ -47,23 +47,14 @@
           <div class="control">
             <label class="control-label" for="pagePresetSelect">Preset</label>
             <div class="control-row">
-              <select id="pagePresetSelect">
-                <option value="a1">A1 - 59.4×84.1 cm</option>
-                <option value="a2">A2 - 42.0×59.4 cm</option>
-                <option value="a3">A3 - 29.7×42.0 cm</option>
-                <option value="a4" selected>A4 - 21.0×29.7 cm</option>
-                <option value="a5">A5 - 14.8×21.0 cm</option>
-                <option value="letter_a4">Letter A4 - 8.5×11 in</option>
-                <option value="square">Square - 8.5×8.5 in</option>
-                <option value="custom">Custom</option>
-              </select>
+              <select id="pagePresetSelect"></select>
             </div>
           </div>
         
           <div class="control">
             <label class="control-label" for="canvasWidth">Width</label>
             <div class="control-row">
-              <input id="canvasWidth" type="number" min="100" max="12000" value="800" />
+              <input id="canvasWidth" type="number" />
               <span class="unit-label">px</span>
             </div>
           </div>
@@ -71,7 +62,7 @@
           <div class="control">
             <label class="control-label" for="canvasHeight">Height</label>
             <div class="control-row">
-              <input id="canvasHeight" type="number" min="100" max="12000" value="600" />
+              <input id="canvasHeight" type="number" />
               <span class="unit-label">px</span>
             </div>
           </div>
@@ -88,7 +79,7 @@
           <div id="pageBackgroundColorControl" class="control">
             <label class="control-label" for="pageBackgroundColor">Color</label>
             <div class="control-row">
-              <input id="pageBackgroundColor" type="color" value="#ffffff" />
+              <input id="pageBackgroundColor" type="color" />
             </div>
           </div>
           </div>
@@ -116,22 +107,15 @@
           <div class="control">
             <label class="control-label" for="shapeTypeSelect">Shape</label>
             <div class="control-row">
-              <select id="shapeTypeSelect">
-                <option value="circle">Circle</option>
-                <option value="square">Square</option>
-                <option value="rectangle">Rectangle</option>
-                <option value="oval">Oval</option>
-                <option value="hexagon">Hexagon</option>
-                <option value="line">Line</option>
-              </select>
+              <select id="shapeTypeSelect"></select>
             </div>
           </div>
 
         <div class="control" id="sizeControl">
           <label class="control-label" for="sizeRange">Size</label>
           <div class="control-row">
-            <input id="sizeRange" type="range" min="10" max="500" value="100" />
-            <input id="sizeNumber" type="number" min="1" max="3000" value="100" />
+            <input id="sizeRange" type="range" />
+            <input id="sizeNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -139,8 +123,8 @@
         <div class="control" id="widthControl">
           <label class="control-label" for="widthRange">Width</label>
           <div class="control-row">
-            <input id="widthRange" type="range" min="1" max="500" value="100" />
-            <input id="widthNumber" type="number" min="1" max="500" value="100" />
+            <input id="widthRange" type="range" />
+            <input id="widthNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -148,8 +132,8 @@
         <div class="control" id="heightControl">
           <label class="control-label" for="heightRange">Height</label>
           <div class="control-row">
-            <input id="heightRange" type="range" min="1" max="500" value="100" />
-            <input id="heightNumber" type="number" min="1" max="500" value="100" />
+            <input id="heightRange" type="range" />
+            <input id="heightNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -157,8 +141,8 @@
         <div class="control">
           <label class="control-label" for="weightRange">Weight</label>
           <div class="control-row">
-            <input id="weightRange" type="range" min="1" max="20" value="4" />
-            <input id="weightNumber" type="number" min="1" max="100" value="4" />
+            <input id="weightRange" type="range" />
+            <input id="weightNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -168,7 +152,7 @@
         <div class="control">
           <label class="control-label" for="strokeColor">Stroke Color</label>
           <div class="control-row">
-            <input id="strokeColor" type="color" value="#000000" />
+            <input id="strokeColor" type="color" />
           </div>
         </div>
 
@@ -182,7 +166,7 @@
         <div id="fillColorControl" class="control">
           <label class="control-label" for="fillColor">Inner Color</label>
           <div class="control-row">
-            <input id="fillColor" type="color" value="#ffffff" />
+            <input id="fillColor" type="color" />
           </div>
         </div>
 
@@ -191,8 +175,8 @@
           <div id="gapXControl" class="control">
             <label id="gapXLabel" class="control-label" for="gapXRange">Gap X</label>
             <div class="control-row">
-              <input id="gapXRange" type="range" min="-200" max="200" value="100" />
-              <input id="gapXNumber" type="number" min="-400" max="400" value="100" />
+              <input id="gapXRange" type="range" />
+              <input id="gapXNumber" type="number" />
               <span class="unit-label">px</span>
             </div>
           </div>
@@ -200,8 +184,8 @@
           <div id="gapYControl" class="control">
             <label id="gapYLabel" class="control-label" for="gapYRange">Gap Y</label>
             <div class="control-row">
-              <input id="gapYRange" type="range" min="-200" max="200" value="100" />
-              <input id="gapYNumber" type="number" min="-400" max="400" value="100" />
+              <input id="gapYRange" type="range" />
+              <input id="gapYNumber" type="number" />
               <span id="gapYUnit" class="unit-label">px</span>
             </div>
           </div>
@@ -209,8 +193,8 @@
           <div id="innerRadiusControl" class="control">
             <label class="control-label" for="innerRadiusRange">Inner Radius</label>
             <div class="control-row">
-              <input id="innerRadiusRange" type="range" min="20" max="300" value="50" />
-              <input id="innerRadiusNumber" type="number" min="10" max="500" value="50" />
+              <input id="innerRadiusRange" type="range" />
+              <input id="innerRadiusNumber" type="number" />
               <span class="unit-label">px</span>
             </div>
           </div>
@@ -218,8 +202,8 @@
         <div id="shapeRotationControl" class="control">
           <label class="control-label" for="shapeRotationRange">Shape Rotation</label>
           <div class="control-row">
-            <input id="shapeRotationRange" type="range" min="-180" max="180" value="0" />
-            <input id="shapeRotationNumber" type="number" min="-180" max="180" value="0" />
+            <input id="shapeRotationRange" type="range" />
+            <input id="shapeRotationNumber" type="number" />
             <span class="unit-label">°</span>
           </div>
         </div>
@@ -236,7 +220,7 @@
             <label class="control-label">Alignment</label>
             <div class="radio-row">
               <label class="radio-with-icon">
-                <input type="radio" name="alignment" value="top-left" checked />
+                <input type="radio" name="alignment" value="top-left" />
                 <img src="icons/top-left.png" alt="" />
                 Top-Left
               </label>
@@ -251,7 +235,7 @@
           <label class="control-label">Base Geometry</label>
           <div class="radio-row">
             <label class="radio-with-icon">
-              <input type="radio" name="baseGeometry" value="grid" checked />
+              <input type="radio" name="baseGeometry" value="grid" />
               <img src="icons/grid.png" alt="" />
               Grid
             </label>
@@ -267,7 +251,7 @@
           <label class="control-label">Layout Style</label>
           <div class="radio-row">
             <label class="radio-with-icon">
-              <input type="radio" name="layoutStyle" value="straight" checked />
+              <input type="radio" name="layoutStyle" value="straight" />
               <img src="icons/grid.png" alt="" />
               Straight
             </label>
@@ -291,8 +275,8 @@
         <div class="control">
           <label class="control-label" for="offsetXRange">Position X</label>
           <div class="control-row">
-            <input id="offsetXRange" type="range" min="-200" max="200" value="0" />
-            <input id="offsetXNumber" type="number" min="-400" max="400" value="0" />
+            <input id="offsetXRange" type="range" />
+            <input id="offsetXNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -300,8 +284,8 @@
         <div class="control">
           <label class="control-label" for="offsetYRange">Position Y</label>
           <div class="control-row">
-            <input id="offsetYRange" type="range" min="-200" max="200" value="0" />
-            <input id="offsetYNumber" type="number" min="-400" max="400" value="0" />
+            <input id="offsetYRange" type="range" />
+            <input id="offsetYNumber" type="number" />
             <span class="unit-label">px</span>
           </div>
         </div>
@@ -309,8 +293,8 @@
         <div class="control">
           <label class="control-label" for="patternRotationRange">Pattern Rotation</label>
           <div class="control-row">
-            <input id="patternRotationRange" type="range" min="-180" max="180" value="0" />
-            <input id="patternRotationNumber" type="number" min="-180" max="180" value="0" />
+            <input id="patternRotationRange" type="range" />
+            <input id="patternRotationNumber" type="number" />
             <span class="unit-label">°</span>
           </div>
         </div>
@@ -329,11 +313,7 @@
           <div class="control footer-control">
             <label class="control-label" for="exportFormat">Format</label>
             <div class="control-row">
-              <select id="exportFormat">
-                <option value="png" selected>PNG</option>
-                <option value="jpg">JPG</option>
-                <option value="pdf">PDF</option>
-              </select>
+              <select id="exportFormat"></select>
             </div>
           </div>
           <button id="downloadImage" class="primary-button" type="button">
@@ -354,8 +334,8 @@
             <span class="line"></span>
             <span id="widthLabel">0 px</span>
           </div>
-          <canvas id="mainCanvas" width="800" height="600"></canvas>
-          <canvas id="exportCanvas" width="800" height="600" aria-hidden="true"></canvas>
+          <canvas id="mainCanvas"></canvas>
+          <canvas id="exportCanvas" aria-hidden="true"></canvas>
         </div>
       </div>
     </div>
@@ -371,7 +351,7 @@
         <p>Please open this link on your PC or Laptop to start creating!</p>
       </div>
     </div>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="scripts/app.js"></script>
   </body>
 
 </html>
