@@ -209,22 +209,57 @@ export const initUI = ({
 
   const RULER_SIZE = 22;
   const RULER_GAP = 10;
+  const PREVIEW_TRANSITION_MS = 400;
+  const MIN_PREVIEW_SIZE = 500;
+  const MAX_PREVIEW_SCALE = 8;
   const MINOR_STEP = 10;
   const INTERMEDIATE_STEP = 100;
   const LABEL_STEP = 500;
+  let previewScale = 1;
+  let rulerSyncRafId = 0;
+  let rulerSyncUntil = 0;
 
-  const drawHorizontalRuler = (previewWidth, canvasWidth, centerZero) => {
+  const syncRulersDuringTransition = (durationMs = PREVIEW_TRANSITION_MS + 80) => {
+    rulerSyncUntil = Math.max(rulerSyncUntil, performance.now() + durationMs);
+    if (rulerSyncRafId) return;
+    const step = () => {
+      updateRulers();
+      if (performance.now() < rulerSyncUntil) {
+        rulerSyncRafId = requestAnimationFrame(step);
+      } else {
+        rulerSyncRafId = 0;
+      }
+    };
+    rulerSyncRafId = requestAnimationFrame(step);
+  };
+
+  const updatePreviewScale = () => {
+    const minCanvasSide = Math.min(canvas.width || 0, canvas.height || 0);
+    let scale = 1;
+    if (minCanvasSide > 0 && minCanvasSide < MIN_PREVIEW_SIZE) {
+      scale = Math.min(MAX_PREVIEW_SCALE, MIN_PREVIEW_SIZE / minCanvasSide);
+    }
+    const previousScale = previewScale;
+    previewScale = scale;
+    canvas.style.transform = `scale(${scale})`;
+    canvas.style.imageRendering = scale > 1 ? "pixelated" : "auto";
+    if (Math.abs(previousScale - scale) > 0.001) {
+      syncRulersDuringTransition();
+    }
+  };
+
+  const drawHorizontalRuler = (previewWidth, canvasWidth, centerZero, rulerSize) => {
     if (!topRuler) return;
     const context = topRuler.getContext("2d");
     if (!context) return;
-    context.clearRect(0, 0, previewWidth, RULER_SIZE);
+    context.clearRect(0, 0, previewWidth, rulerSize);
     context.fillStyle = "#f5f6f8";
-    context.fillRect(0, 0, previewWidth, RULER_SIZE);
+    context.fillRect(0, 0, previewWidth, rulerSize);
     context.strokeStyle = "#b6bcc6";
     context.lineWidth = 1;
     context.beginPath();
-    context.moveTo(0, RULER_SIZE - 0.5);
-    context.lineTo(previewWidth, RULER_SIZE - 0.5);
+    context.moveTo(0, rulerSize - 0.5);
+    context.lineTo(previewWidth, rulerSize - 0.5);
     context.stroke();
 
     const scaleX = canvasWidth > 0 ? previewWidth / canvasWidth : 1;
@@ -245,12 +280,12 @@ export const initUI = ({
       const x = canvasX * scaleX;
       const isIntermediate = relative % INTERMEDIATE_STEP === 0;
       const isLabel = relative % LABEL_STEP === 0;
-      const tick = isIntermediate ? 14 : 3;
+      const tick = isIntermediate ? Math.max(8, Math.round(rulerSize * 0.64)) : Math.max(2, Math.round(rulerSize * 0.14));
       context.strokeStyle = isIntermediate ? majorColor : minorColor;
       context.lineWidth = isIntermediate ? 1.5 : 1;
       context.beginPath();
-      context.moveTo(x + 0.5, RULER_SIZE);
-      context.lineTo(x + 0.5, RULER_SIZE - tick);
+      context.moveTo(x + 0.5, rulerSize);
+      context.lineTo(x + 0.5, rulerSize - tick);
       context.stroke();
       if (isLabel) {
         context.fillText(String(relative), x, 1);
@@ -259,25 +294,25 @@ export const initUI = ({
 
     context.fillStyle = "#e53935";
     context.beginPath();
-    context.moveTo(zeroX, RULER_SIZE - 1);
-    context.lineTo(zeroX - 4, RULER_SIZE - 8);
-    context.lineTo(zeroX + 4, RULER_SIZE - 8);
+    context.moveTo(zeroX, rulerSize - 1);
+    context.lineTo(zeroX - 4, rulerSize - 8);
+    context.lineTo(zeroX + 4, rulerSize - 8);
     context.closePath();
     context.fill();
   };
 
-  const drawVerticalRuler = (previewHeight, canvasHeight, centerZero) => {
+  const drawVerticalRuler = (previewHeight, canvasHeight, centerZero, rulerSize) => {
     if (!leftRuler) return;
     const context = leftRuler.getContext("2d");
     if (!context) return;
-    context.clearRect(0, 0, RULER_SIZE, previewHeight);
+    context.clearRect(0, 0, rulerSize, previewHeight);
     context.fillStyle = "#f5f6f8";
-    context.fillRect(0, 0, RULER_SIZE, previewHeight);
+    context.fillRect(0, 0, rulerSize, previewHeight);
     context.strokeStyle = "#b6bcc6";
     context.lineWidth = 1;
     context.beginPath();
-    context.moveTo(RULER_SIZE - 0.5, 0);
-    context.lineTo(RULER_SIZE - 0.5, previewHeight);
+    context.moveTo(rulerSize - 0.5, 0);
+    context.lineTo(rulerSize - 0.5, previewHeight);
     context.stroke();
 
     const scaleY = canvasHeight > 0 ? previewHeight / canvasHeight : 1;
@@ -298,12 +333,12 @@ export const initUI = ({
       const y = canvasY * scaleY;
       const isIntermediate = relative % INTERMEDIATE_STEP === 0;
       const isLabel = relative % LABEL_STEP === 0;
-      const tick = isIntermediate ? 14 : 3;
+      const tick = isIntermediate ? Math.max(8, Math.round(rulerSize * 0.64)) : Math.max(2, Math.round(rulerSize * 0.14));
       context.strokeStyle = isIntermediate ? majorColor : minorColor;
       context.lineWidth = isIntermediate ? 1.5 : 1;
       context.beginPath();
-      context.moveTo(RULER_SIZE, y + 0.5);
-      context.lineTo(RULER_SIZE - tick, y + 0.5);
+      context.moveTo(rulerSize, y + 0.5);
+      context.lineTo(rulerSize - tick, y + 0.5);
       context.stroke();
       if (isLabel) {
         context.fillText(String(relative), 2, y);
@@ -312,9 +347,9 @@ export const initUI = ({
 
     context.fillStyle = "#e53935";
     context.beginPath();
-    context.moveTo(RULER_SIZE - 1, zeroY);
-    context.lineTo(RULER_SIZE - 8, zeroY - 4);
-    context.lineTo(RULER_SIZE - 8, zeroY + 4);
+    context.moveTo(rulerSize - 1, zeroY);
+    context.lineTo(rulerSize - 8, zeroY - 4);
+    context.lineTo(rulerSize - 8, zeroY + 4);
     context.closePath();
     context.fill();
   };
@@ -326,26 +361,33 @@ export const initUI = ({
     leftRuler.style.display = showGuides ? "block" : "none";
     if (!showGuides) return;
 
-    const width = Math.max(1, Math.round(canvas.clientWidth));
-    const height = Math.max(1, Math.round(canvas.clientHeight));
+    const canvasRect = canvas.getBoundingClientRect();
+    const frameRect = canvas.parentElement?.getBoundingClientRect();
+    if (!frameRect) return;
+    const width = Math.max(1, Math.round(canvasRect.width));
+    const height = Math.max(1, Math.round(canvasRect.height));
+    const currentScale =
+      canvas.width > 0 ? canvasRect.width / canvas.width : previewScale;
+    const rulerSize = Math.max(20, Math.round(RULER_SIZE * currentScale));
+    const rulerGap = Math.max(10, Math.round(RULER_GAP * currentScale));
     const centerZero = getActiveLayer()?.alignment === "center";
 
     topRuler.width = width;
-    topRuler.height = RULER_SIZE;
+    topRuler.height = rulerSize;
     topRuler.style.width = `${width}px`;
-    topRuler.style.height = `${RULER_SIZE}px`;
-    topRuler.style.left = `${canvas.offsetLeft}px`;
-    topRuler.style.top = `${canvas.offsetTop - RULER_SIZE - RULER_GAP}px`;
+    topRuler.style.height = `${rulerSize}px`;
+    topRuler.style.left = `${canvasRect.left - frameRect.left}px`;
+    topRuler.style.top = `${canvasRect.top - frameRect.top - rulerSize - rulerGap}px`;
 
-    leftRuler.width = RULER_SIZE;
+    leftRuler.width = rulerSize;
     leftRuler.height = height;
-    leftRuler.style.width = `${RULER_SIZE}px`;
+    leftRuler.style.width = `${rulerSize}px`;
     leftRuler.style.height = `${height}px`;
-    leftRuler.style.left = `${canvas.offsetLeft - RULER_SIZE - RULER_GAP}px`;
-    leftRuler.style.top = `${canvas.offsetTop}px`;
+    leftRuler.style.left = `${canvasRect.left - frameRect.left - rulerSize - rulerGap}px`;
+    leftRuler.style.top = `${canvasRect.top - frameRect.top}px`;
 
-    drawHorizontalRuler(width, canvas.width, centerZero);
-    drawVerticalRuler(height, canvas.height, centerZero);
+    drawHorizontalRuler(width, canvas.width, centerZero, rulerSize);
+    drawVerticalRuler(height, canvas.height, centerZero, rulerSize);
   };
 
   const updateCanvasSize = () => {
@@ -361,7 +403,8 @@ export const initUI = ({
     if (heightLabel) heightLabel.textContent = `${height} px`;
     state.globalSettings.canvasWidth = width;
     state.globalSettings.canvasHeight = height;
-    updateRulers();
+    updatePreviewScale();
+    requestAnimationFrame(updateRulers);
     scheduleRender();
   };
 
@@ -1310,6 +1353,16 @@ export const initUI = ({
   };
 
   window.addEventListener("resize", updateRulers);
+  canvas.addEventListener("transitionrun", (event) => {
+    if (event.propertyName === "transform") {
+      syncRulersDuringTransition();
+    }
+  });
+  canvas.addEventListener("transitionend", (event) => {
+    if (event.propertyName === "transform") {
+      updateRulers();
+    }
+  });
 
   const resetButton = document.getElementById("resetDefaults");
   if (resetButton) {

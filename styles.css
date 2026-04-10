@@ -464,6 +464,8 @@ label {
   object-fit: contain;
   background: #fff;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+  transform-origin: center center;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 #exportCanvas {
