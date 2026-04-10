@@ -49,6 +49,7 @@ const REQUIRED_PATHS = [
   "controls.pattern.rotation.default",
   "controls.pattern.defaults",
   "controls.pattern.defaults.gridAnchor",
+  "controls.pattern.defaults.showGuides",
   "render.grid.minStep",
   "render.grid.edgePaddingCells",
   "render.grid.bleedStepMultiplier",

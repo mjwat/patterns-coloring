@@ -216,9 +216,9 @@
             Pattern
           </h3>
           <div class="group-body">
-          <div class="radio-group">
-            <label class="control-label">Alignment</label>
-            <div class="radio-row">
+        <div class="radio-group">
+          <label class="control-label">Alignment</label>
+          <div class="radio-row">
               <label class="radio-with-icon">
                 <input type="radio" name="alignment" value="top-left" />
                 <img src="icons/top-left.png" alt="" />
@@ -229,8 +229,15 @@
                 <img src="icons/center.png" alt="" />
                 Center
               </label>
-            </div>
           </div>
+        </div>
+
+        <div class="control">
+          <label class="checkbox-row">
+            <input id="showGuides" type="checkbox" checked />
+            Show Guides
+          </label>
+        </div>
         <div class="radio-group">
           <label class="control-label">Base Geometry</label>
           <div class="radio-row">
@@ -340,6 +347,8 @@
     <div class="workspace">
       <div id="canvasContainer">
         <div class="canvas-frame">
+          <canvas id="topRuler" class="external-ruler ruler-top" aria-hidden="true"></canvas>
+          <canvas id="leftRuler" class="external-ruler ruler-left" aria-hidden="true"></canvas>
           <div class="dimension vertical">
             <span class="line"></span>
             <span id="heightLabel">0 px</span>

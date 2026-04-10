@@ -184,6 +184,9 @@ export const initUI = ({
   const pageBackgroundColorControl = document.getElementById(
     "pageBackgroundColorControl"
   );
+  const showGuidesInput = document.getElementById("showGuides");
+  const topRuler = document.getElementById("topRuler");
+  const leftRuler = document.getElementById("leftRuler");
   const widthLabel = document.getElementById("widthLabel");
   const heightLabel = document.getElementById("heightLabel");
   const getSelectedOrientation = () =>
@@ -204,6 +207,147 @@ export const initUI = ({
     }
   };
 
+  const RULER_SIZE = 22;
+  const RULER_GAP = 10;
+  const MINOR_STEP = 10;
+  const INTERMEDIATE_STEP = 100;
+  const LABEL_STEP = 500;
+
+  const drawHorizontalRuler = (previewWidth, canvasWidth, centerZero) => {
+    if (!topRuler) return;
+    const context = topRuler.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, previewWidth, RULER_SIZE);
+    context.fillStyle = "#f5f6f8";
+    context.fillRect(0, 0, previewWidth, RULER_SIZE);
+    context.strokeStyle = "#b6bcc6";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(0, RULER_SIZE - 0.5);
+    context.lineTo(previewWidth, RULER_SIZE - 0.5);
+    context.stroke();
+
+    const scaleX = canvasWidth > 0 ? previewWidth / canvasWidth : 1;
+    const zeroCanvasX = centerZero ? canvasWidth / 2 : 0;
+    const zeroX = zeroCanvasX * scaleX;
+    const minorColor = "#98a0ad";
+    const majorColor = "#4f5968";
+    context.fillStyle = majorColor;
+    context.font = "10px Segoe UI";
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    const minRelative = -zeroCanvasX;
+    const maxRelative = canvasWidth - zeroCanvasX;
+    const startRelative =
+      Math.ceil(minRelative / MINOR_STEP) * MINOR_STEP;
+    for (let relative = startRelative; relative <= maxRelative; relative += MINOR_STEP) {
+      const canvasX = zeroCanvasX + relative;
+      const x = canvasX * scaleX;
+      const isIntermediate = relative % INTERMEDIATE_STEP === 0;
+      const isLabel = relative % LABEL_STEP === 0;
+      const tick = isIntermediate ? 14 : 3;
+      context.strokeStyle = isIntermediate ? majorColor : minorColor;
+      context.lineWidth = isIntermediate ? 1.5 : 1;
+      context.beginPath();
+      context.moveTo(x + 0.5, RULER_SIZE);
+      context.lineTo(x + 0.5, RULER_SIZE - tick);
+      context.stroke();
+      if (isLabel) {
+        context.fillText(String(relative), x, 1);
+      }
+    }
+
+    context.fillStyle = "#e53935";
+    context.beginPath();
+    context.moveTo(zeroX, RULER_SIZE - 1);
+    context.lineTo(zeroX - 4, RULER_SIZE - 8);
+    context.lineTo(zeroX + 4, RULER_SIZE - 8);
+    context.closePath();
+    context.fill();
+  };
+
+  const drawVerticalRuler = (previewHeight, canvasHeight, centerZero) => {
+    if (!leftRuler) return;
+    const context = leftRuler.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, RULER_SIZE, previewHeight);
+    context.fillStyle = "#f5f6f8";
+    context.fillRect(0, 0, RULER_SIZE, previewHeight);
+    context.strokeStyle = "#b6bcc6";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(RULER_SIZE - 0.5, 0);
+    context.lineTo(RULER_SIZE - 0.5, previewHeight);
+    context.stroke();
+
+    const scaleY = canvasHeight > 0 ? previewHeight / canvasHeight : 1;
+    const zeroCanvasY = centerZero ? canvasHeight / 2 : 0;
+    const zeroY = zeroCanvasY * scaleY;
+    const minorColor = "#98a0ad";
+    const majorColor = "#4f5968";
+    context.fillStyle = majorColor;
+    context.font = "10px Segoe UI";
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    const minRelative = -zeroCanvasY;
+    const maxRelative = canvasHeight - zeroCanvasY;
+    const startRelative =
+      Math.ceil(minRelative / MINOR_STEP) * MINOR_STEP;
+    for (let relative = startRelative; relative <= maxRelative; relative += MINOR_STEP) {
+      const canvasY = zeroCanvasY + relative;
+      const y = canvasY * scaleY;
+      const isIntermediate = relative % INTERMEDIATE_STEP === 0;
+      const isLabel = relative % LABEL_STEP === 0;
+      const tick = isIntermediate ? 14 : 3;
+      context.strokeStyle = isIntermediate ? majorColor : minorColor;
+      context.lineWidth = isIntermediate ? 1.5 : 1;
+      context.beginPath();
+      context.moveTo(RULER_SIZE, y + 0.5);
+      context.lineTo(RULER_SIZE - tick, y + 0.5);
+      context.stroke();
+      if (isLabel) {
+        context.fillText(String(relative), 2, y);
+      }
+    }
+
+    context.fillStyle = "#e53935";
+    context.beginPath();
+    context.moveTo(RULER_SIZE - 1, zeroY);
+    context.lineTo(RULER_SIZE - 8, zeroY - 4);
+    context.lineTo(RULER_SIZE - 8, zeroY + 4);
+    context.closePath();
+    context.fill();
+  };
+
+  const updateRulers = () => {
+    if (!topRuler || !leftRuler || !canvas) return;
+    const showGuides = state.globalSettings.showGuides !== false;
+    topRuler.style.display = showGuides ? "block" : "none";
+    leftRuler.style.display = showGuides ? "block" : "none";
+    if (!showGuides) return;
+
+    const width = Math.max(1, Math.round(canvas.clientWidth));
+    const height = Math.max(1, Math.round(canvas.clientHeight));
+    const centerZero = getActiveLayer()?.alignment === "center";
+
+    topRuler.width = width;
+    topRuler.height = RULER_SIZE;
+    topRuler.style.width = `${width}px`;
+    topRuler.style.height = `${RULER_SIZE}px`;
+    topRuler.style.left = `${canvas.offsetLeft}px`;
+    topRuler.style.top = `${canvas.offsetTop - RULER_SIZE - RULER_GAP}px`;
+
+    leftRuler.width = RULER_SIZE;
+    leftRuler.height = height;
+    leftRuler.style.width = `${RULER_SIZE}px`;
+    leftRuler.style.height = `${height}px`;
+    leftRuler.style.left = `${canvas.offsetLeft - RULER_SIZE - RULER_GAP}px`;
+    leftRuler.style.top = `${canvas.offsetTop}px`;
+
+    drawHorizontalRuler(width, canvas.width, centerZero);
+    drawVerticalRuler(height, canvas.height, centerZero);
+  };
+
   const updateCanvasSize = () => {
     const width = Number(widthInput?.value) || canvas.width;
     const height = Number(heightInput?.value) || canvas.height;
@@ -217,6 +361,7 @@ export const initUI = ({
     if (heightLabel) heightLabel.textContent = `${height} px`;
     state.globalSettings.canvasWidth = width;
     state.globalSettings.canvasHeight = height;
+    updateRulers();
     scheduleRender();
   };
 
@@ -285,6 +430,12 @@ export const initUI = ({
     state.globalSettings.withoutBackground = !pageBackgroundEnabledInput.checked;
     applyBackgroundModeUI(state.globalSettings.withoutBackground);
     scheduleRender();
+    saveState(state);
+  });
+
+  showGuidesInput?.addEventListener("change", () => {
+    state.globalSettings.showGuides = showGuidesInput.checked;
+    updateRulers();
     saveState(state);
   });
 
@@ -706,6 +857,7 @@ export const initUI = ({
       document.querySelector('input[name="baseGeometry"]:checked')?.value ||
       layer.baseGeometry;
     updateGridAnchorControl(layer);
+    updateRulers();
   };
 
   document.querySelectorAll('input[name="alignment"]').forEach((radio) => {
@@ -746,6 +898,7 @@ export const initUI = ({
         layer.innerRadius = config.controls.element.radial.innerRadius.default;
       }
       updatePatternModeControls(layer);
+      updateRulers();
       scheduleRender();
       saveState(state);
     });
@@ -1105,6 +1258,9 @@ export const initUI = ({
       pageBackgroundColorInput.value =
         state.globalSettings.backgroundColor || config.controls.canvas.backgroundColor.default;
     }
+    if (showGuidesInput) {
+      showGuidesInput.checked = state.globalSettings.showGuides !== false;
+    }
     applyBackgroundModeUI(state.globalSettings.withoutBackground);
     setPresetSelection(state.globalSettings.pagePreset);
     setRadioValue("orientation", state.globalSettings.orientation);
@@ -1150,7 +1306,10 @@ export const initUI = ({
     }
     updateCanvasSize();
     updateOrientationRadios();
+    updateRulers();
   };
+
+  window.addEventListener("resize", updateRulers);
 
   const resetButton = document.getElementById("resetDefaults");
   if (resetButton) {

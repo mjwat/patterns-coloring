@@ -97,7 +97,8 @@ export const createDefaultState = () => {
       canvasWidth: defaultPageSize.width,
       canvasHeight: defaultPageSize.height,
       backgroundColor: config.controls.canvas.backgroundColor.default,
-      withoutBackground: config.controls.canvas.defaults.withoutBackground
+      withoutBackground: config.controls.canvas.defaults.withoutBackground,
+      showGuides: config.controls.pattern.defaults.showGuides
     },
     layers: [{ ...createDefaultLayer(), name: `${config.layers.defaultNamePrefix} 1` }],
     activeLayerIndex: 0
@@ -231,7 +232,11 @@ export const loadState = () => {
         withoutBackground:
           parsed.withoutBackground === undefined
             ? config.controls.canvas.defaults.withoutBackground
-            : Boolean(parsed.withoutBackground)
+            : Boolean(parsed.withoutBackground),
+        showGuides:
+          parsed.showGuides === undefined
+            ? config.controls.pattern.defaults.showGuides
+            : Boolean(parsed.showGuides)
       },
       layers: [legacy],
       activeLayerIndex: 0

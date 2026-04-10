@@ -69,11 +69,11 @@
         "x": {
           "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 4000, "default": 100 },
           "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 500, "default": 100 },
-          "radial": { "rangeMin": 0, "rangeMax": 300, "numberMin": -100, "numberMax": 500, "default": 100 }
+          "radial": { "rangeMin": 0, "rangeMax": 300, "numberMin": -100, "numberMax": 2000, "default": 100 }
         },
         "y": {
           "grid": { "rangeMin": -200, "rangeMax": 200, "numberMin": -2000, "numberMax": 4000, "default": 100 },
-          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 2000, "default": 100  },
+          "line": { "rangeMin": 0, "rangeMax": 500, "numberMin": 0, "numberMax": 3000, "default": 100  },
           "radial": { "rangeMin": 4, "rangeMax": 36, "numberMin": 2, "numberMax": 120, "default": 36  }
         }
       },
@@ -81,7 +81,7 @@
         "innerRadius": {
           "default": 200,
           "range": { "id": "innerRadiusRange", "min": 20, "max": 300 },
-          "number": { "id": "innerRadiusNumber", "min": 10, "max": 500 }
+          "number": { "id": "innerRadiusNumber", "min": 0, "max": 2000 }
         }
       },
       "rotation": {
@@ -96,7 +96,8 @@
         "layoutStyle": "straight",
         "alignToRadius": true,
         "alignment": "top-left",
-        "gridAnchor": "element"
+        "gridAnchor": "element",
+        "showGuides": true
       },
       "position": {
         "x": {

@@ -114,6 +114,24 @@ body {
   padding: 28px 56px 40px 28px;
 }
 
+.external-ruler {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  z-index: 2;
+  border: 1px solid #c7ccd3;
+  background: #f5f6f8;
+  box-sizing: border-box;
+}
+
+.ruler-top {
+  border-bottom: none;
+}
+
+.ruler-left {
+  border-right: none;
+}
+
 .dimension {
   position: absolute;
   color: #b8b8b8;
