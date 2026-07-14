@@ -21,13 +21,6 @@ const getRadialShapeOffset = (shapeType) => {
   return 0;
 };
 
-const getRadialUnalignedPhase = (shapeType) => {
-  if (shapeType === "hexagon") {
-    return 0;
-  }
-  return 0;
-};
-
 export const drawShape = (
   ctx,
   x,
@@ -174,7 +167,6 @@ export const generatePattern = (
       );
       const alignToRadius = layer.alignToRadius === true;
       const radialShapeOffset = getRadialShapeOffset(layer.shapeType);
-      const radialUnalignedPhase = getRadialUnalignedPhase(layer.shapeType);
       const originX = anchorX - offsetX;
       const originY = anchorY - offsetY;
       const shapeExtent = Math.max(size, width, height);
@@ -197,7 +189,7 @@ export const generatePattern = (
           const y = originY + Math.sin(angle) * radius;
           const rotation = alignToRadius
             ? angle + radialShapeOffset + shapeRadians
-            : radialUnalignedPhase;
+            : 0;
           ctx.save();
           ctx.translate(x, y);
           ctx.rotate(rotation);

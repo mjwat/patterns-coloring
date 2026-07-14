@@ -218,6 +218,7 @@ export const initUI = ({
   let previewScale = 1;
   let rulerSyncRafId = 0;
   let rulerSyncUntil = 0;
+  let lastRulerRenderKey = "";
 
   const syncRulersDuringTransition = (durationMs = PREVIEW_TRANSITION_MS + 80) => {
     rulerSyncUntil = Math.max(rulerSyncUntil, performance.now() + durationMs);
@@ -359,7 +360,10 @@ export const initUI = ({
     const showGuides = state.globalSettings.showGuides !== false;
     topRuler.style.display = showGuides ? "block" : "none";
     leftRuler.style.display = showGuides ? "block" : "none";
-    if (!showGuides) return;
+    if (!showGuides) {
+      lastRulerRenderKey = "hidden";
+      return;
+    }
 
     const canvasRect = canvas.getBoundingClientRect();
     const frameRect = canvas.parentElement?.getBoundingClientRect();
@@ -371,20 +375,41 @@ export const initUI = ({
     const rulerSize = Math.max(20, Math.round(RULER_SIZE * currentScale));
     const rulerGap = Math.max(10, Math.round(RULER_GAP * currentScale));
     const centerZero = getActiveLayer()?.alignment === "center";
+    const topLeft = Math.round(canvasRect.left - frameRect.left);
+    const topTop = Math.round(canvasRect.top - frameRect.top - rulerSize - rulerGap);
+    const leftLeft = Math.round(canvasRect.left - frameRect.left - rulerSize - rulerGap);
+    const leftTop = Math.round(canvasRect.top - frameRect.top);
+    const nextRenderKey = [
+      width,
+      height,
+      canvas.width,
+      canvas.height,
+      rulerSize,
+      rulerGap,
+      centerZero ? 1 : 0,
+      topLeft,
+      topTop,
+      leftLeft,
+      leftTop
+    ].join("|");
+    if (nextRenderKey === lastRulerRenderKey) {
+      return;
+    }
+    lastRulerRenderKey = nextRenderKey;
 
     topRuler.width = width;
     topRuler.height = rulerSize;
     topRuler.style.width = `${width}px`;
     topRuler.style.height = `${rulerSize}px`;
-    topRuler.style.left = `${canvasRect.left - frameRect.left}px`;
-    topRuler.style.top = `${canvasRect.top - frameRect.top - rulerSize - rulerGap}px`;
+    topRuler.style.left = `${topLeft}px`;
+    topRuler.style.top = `${topTop}px`;
 
     leftRuler.width = rulerSize;
     leftRuler.height = height;
     leftRuler.style.width = `${rulerSize}px`;
     leftRuler.style.height = `${height}px`;
-    leftRuler.style.left = `${canvasRect.left - frameRect.left - rulerSize - rulerGap}px`;
-    leftRuler.style.top = `${canvasRect.top - frameRect.top}px`;
+    leftRuler.style.left = `${leftLeft}px`;
+    leftRuler.style.top = `${leftTop}px`;
 
     drawHorizontalRuler(width, canvas.width, centerZero, rulerSize);
     drawVerticalRuler(height, canvas.height, centerZero, rulerSize);
@@ -602,6 +627,27 @@ export const initUI = ({
   };
 
   const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
+  const LINKED_LAYER_FIELDS = [
+    { rangeId: "sizeRange", numberId: "sizeNumber", key: "size" },
+    { rangeId: "widthRange", numberId: "widthNumber", key: "width" },
+    { rangeId: "heightRange", numberId: "heightNumber", key: "height" },
+    { rangeId: "gapXRange", numberId: "gapXNumber", key: "gapX" },
+    { rangeId: "gapYRange", numberId: "gapYNumber", key: "gapY" },
+    { rangeId: "innerRadiusRange", numberId: "innerRadiusNumber", key: "innerRadius" },
+    { rangeId: "weightRange", numberId: "weightNumber", key: "weight" },
+    { rangeId: "offsetXRange", numberId: "offsetXNumber", key: "offsetX" },
+    { rangeId: "offsetYRange", numberId: "offsetYNumber", key: "offsetY" },
+    {
+      rangeId: "shapeRotationRange",
+      numberId: "shapeRotationNumber",
+      key: "shapeRotation"
+    },
+    {
+      rangeId: "patternRotationRange",
+      numberId: "patternRotationNumber",
+      key: "patternRotation"
+    }
+  ];
 
   const bindLinkedInputs = (rangeId, numberId, key) => {
     const range = document.getElementById(rangeId);
@@ -644,7 +690,7 @@ export const initUI = ({
     });
   };
 
-  const bindRadioGroup = (name, key) => {
+  const bindRadioGroup = (name, key, onChange) => {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (!radios.length) return;
     radios.forEach((radio) => {
@@ -653,6 +699,9 @@ export const initUI = ({
           const layer = getActiveLayer();
           if (!layer) return;
           layer[key] = radio.value;
+          if (onChange) {
+            onChange(layer);
+          }
           scheduleRender();
           saveState(state);
         }
@@ -660,29 +709,18 @@ export const initUI = ({
     });
   };
 
-  bindLinkedInputs("sizeRange", "sizeNumber", "size");
-  bindLinkedInputs("widthRange", "widthNumber", "width");
-  bindLinkedInputs("heightRange", "heightNumber", "height");
-  bindLinkedInputs("gapXRange", "gapXNumber", "gapX");
-  bindLinkedInputs("gapYRange", "gapYNumber", "gapY");
-  bindLinkedInputs("innerRadiusRange", "innerRadiusNumber", "innerRadius");
-  bindLinkedInputs("weightRange", "weightNumber", "weight");
-  bindLinkedInputs("offsetXRange", "offsetXNumber", "offsetX");
-  bindLinkedInputs("offsetYRange", "offsetYNumber", "offsetY");
-  bindLinkedInputs("shapeRotationRange", "shapeRotationNumber", "shapeRotation");
-  bindLinkedInputs(
-    "patternRotationRange",
-    "patternRotationNumber",
-    "patternRotation"
-  );
+  LINKED_LAYER_FIELDS.forEach(({ rangeId, numberId, key }) => {
+    bindLinkedInputs(rangeId, numberId, key);
+  });
 
   const strokeColorInput = document.getElementById("strokeColor");
   const fillEnabledInput = document.getElementById("fillEnabled");
   const fillColorInput = document.getElementById("fillColor");
   const fillColorControl = document.getElementById("fillColorControl");
-  const updateFillControls = (enabled) => {
+  const updateFillControls = (enabled, shapeType) => {
     if (fillColorControl) {
-      fillColorControl.style.display = enabled ? "grid" : "none";
+      fillColorControl.style.display =
+        enabled && shapeType !== "line" ? "grid" : "none";
     }
   };
   const applyStrokeColor = (hex) => {
@@ -707,7 +745,7 @@ export const initUI = ({
       const layer = getActiveLayer();
       if (!layer) return;
       layer.fill = fillEnabledInput.checked;
-      updateFillControls(layer.fill);
+      updateFillControls(layer.fill, layer.shapeType);
       scheduleRender();
       saveState(state);
     });
@@ -724,9 +762,17 @@ export const initUI = ({
     });
   }
 
-  bindRadioGroup("alignment", "alignment");
-  bindRadioGroup("layoutStyle", "layoutStyle");
-  bindRadioGroup("gridAnchor", "gridAnchor");
+  bindRadioGroup("alignment", "alignment", (layer) => {
+    updateGridAnchorControl(layer);
+    updateRulers();
+  });
+  bindRadioGroup("layoutStyle", "layoutStyle", (layer) => {
+    updateGridAnchorControl(layer);
+    updateRulers();
+  });
+  bindRadioGroup("gridAnchor", "gridAnchor", () => {
+    updateRulers();
+  });
 
   const shapeTypeSelect = document.getElementById("shapeTypeSelect");
   const sizeControl = document.getElementById("sizeControl");
@@ -862,6 +908,7 @@ export const initUI = ({
       sizeLabel.textContent = shapeType === "line" ? "Length" : "Size";
     }
     const layer = getActiveLayer();
+    updateFillControls(Boolean(layer?.fill), shapeType);
     applyGapLimits(shapeType, layer?.baseGeometry || "grid");
   };
 
@@ -886,29 +933,6 @@ export const initUI = ({
       saveState(state);
     });
   }
-
-  const refreshAnchorVisibilityFromRadios = () => {
-    const layer = getActiveLayer();
-    if (!layer) return;
-    layer.alignment =
-      document.querySelector('input[name="alignment"]:checked')?.value ||
-      layer.alignment;
-    layer.layoutStyle =
-      document.querySelector('input[name="layoutStyle"]:checked')?.value ||
-      layer.layoutStyle;
-    layer.baseGeometry =
-      document.querySelector('input[name="baseGeometry"]:checked')?.value ||
-      layer.baseGeometry;
-    updateGridAnchorControl(layer);
-    updateRulers();
-  };
-
-  document.querySelectorAll('input[name="alignment"]').forEach((radio) => {
-    radio.addEventListener("change", refreshAnchorVisibilityFromRadios);
-  });
-  document.querySelectorAll('input[name="layoutStyle"]').forEach((radio) => {
-    radio.addEventListener("change", refreshAnchorVisibilityFromRadios);
-  });
 
   const baseGeometryRadios = document.querySelectorAll(
     'input[name="baseGeometry"]'
@@ -976,6 +1000,134 @@ export const initUI = ({
     scheduleRender();
   };
 
+  const deleteLayer = (index) => {
+    if (index <= 0 || index >= state.layers.length) return;
+    state.layers.splice(index, 1);
+    if (state.activeLayerIndex >= state.layers.length) {
+      state.activeLayerIndex = state.layers.length - 1;
+    }
+    renderLayerList();
+    applySettingsToUI();
+    saveState(state);
+    scheduleRender();
+  };
+
+  const moveLayer = (fromIndex, toIndex) => {
+    if (
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= state.layers.length ||
+      toIndex >= state.layers.length
+    ) {
+      return;
+    }
+    const temp = state.layers[toIndex];
+    state.layers[toIndex] = state.layers[fromIndex];
+    state.layers[fromIndex] = temp;
+    if (state.activeLayerIndex === fromIndex) {
+      state.activeLayerIndex = toIndex;
+    } else if (state.activeLayerIndex === toIndex) {
+      state.activeLayerIndex = fromIndex;
+    }
+    renderLayerList();
+    saveState(state);
+    scheduleRender();
+  };
+
+  const toggleLayerVisibility = (index) => {
+    const layer = state.layers[index];
+    if (!layer) return;
+    layer.visible = !layer.visible;
+    renderLayerList();
+    saveState(state);
+    scheduleRender();
+  };
+
+  const startLayerRename = (item, index) => {
+    const layer = state.layers[index];
+    if (!layer || !item) return;
+    const nameInput = item.querySelector(".layer-name-input");
+    const nameDisplay = item.querySelector(".layer-name");
+    if (!nameInput || !nameDisplay) return;
+    nameInput.value =
+      layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`;
+    nameDisplay.style.display = "none";
+    nameInput.style.display = "inline";
+    nameInput.focus();
+    nameInput.select();
+  };
+
+  const finishLayerRename = (nameInput) => {
+    const item = nameInput.closest(".layer-item");
+    if (!item) return;
+    const index = Number(item.dataset.index);
+    const layer = state.layers[index];
+    if (!layer) return;
+    const nameDisplay = item.querySelector(".layer-name");
+    if (!nameDisplay) return;
+    const nextName =
+      nameInput.value.trim() ||
+      `${config.layers.defaultNamePrefix} ${index + 1}`;
+    layer.name = nextName;
+    nameDisplay.textContent = nextName;
+    nameInput.style.display = "none";
+    nameDisplay.style.display = "inline";
+    saveState(state);
+  };
+
+  if (layersList) {
+    layersList.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const actionButton = target.closest("button[data-action]");
+      const item = target.closest(".layer-item");
+      if (!item) return;
+      const index = Number(item.dataset.index);
+      if (!Number.isFinite(index)) return;
+
+      if (actionButton) {
+        const action = actionButton.dataset.action;
+        if (action === "move-up") {
+          moveLayer(index, index - 1);
+        } else if (action === "move-down") {
+          moveLayer(index, index + 1);
+        } else if (action === "rename") {
+          startLayerRename(item, index);
+        } else if (action === "duplicate") {
+          duplicateLayer(index);
+        } else if (action === "visibility") {
+          toggleLayerVisibility(index);
+        } else if (action === "delete") {
+          deleteLayer(index);
+        }
+        return;
+      }
+
+      if (target.closest(".layer-name-input")) {
+        return;
+      }
+
+      setActiveLayer(index);
+    });
+
+    layersList.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.classList.contains("layer-name-input")) return;
+      if (event.key === "Enter") {
+        finishLayerRename(target);
+      }
+    });
+
+    layersList.addEventListener("focusout", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.classList.contains("layer-name-input")) return;
+      finishLayerRename(target);
+    });
+  }
+
   const renderLayerList = () => {
     if (!layersList) return;
     const previousPositions = new Map();
@@ -987,6 +1139,7 @@ export const initUI = ({
       const item = document.createElement("div");
       item.className = "layer-item";
       item.dataset.layerId = getLayerDomId(layer);
+      item.dataset.index = String(index);
       if (index === state.activeLayerIndex) {
         item.classList.add("active");
       }
@@ -999,42 +1152,14 @@ export const initUI = ({
       upButton.type = "button";
       upButton.textContent = "↑";
       upButton.disabled = index === 0;
-      upButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        if (index === 0) return;
-        const temp = state.layers[index - 1];
-        state.layers[index - 1] = state.layers[index];
-        state.layers[index] = temp;
-        if (state.activeLayerIndex === index) {
-          state.activeLayerIndex = index - 1;
-        } else if (state.activeLayerIndex === index - 1) {
-          state.activeLayerIndex = index;
-        }
-        renderLayerList();
-        saveState(state);
-        scheduleRender();
-      });
+      upButton.dataset.action = "move-up";
 
       const downButton = document.createElement("button");
       downButton.className = "layer-action";
       downButton.type = "button";
       downButton.textContent = "↓";
       downButton.disabled = index === state.layers.length - 1;
-      downButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        if (index === state.layers.length - 1) return;
-        const temp = state.layers[index + 1];
-        state.layers[index + 1] = state.layers[index];
-        state.layers[index] = temp;
-        if (state.activeLayerIndex === index) {
-          state.activeLayerIndex = index + 1;
-        } else if (state.activeLayerIndex === index + 1) {
-          state.activeLayerIndex = index;
-        }
-        renderLayerList();
-        saveState(state);
-        scheduleRender();
-      });
+      downButton.dataset.action = "move-down";
 
       reorder.appendChild(upButton);
       reorder.appendChild(downButton);
@@ -1043,6 +1168,7 @@ export const initUI = ({
       renameButton.className = "layer-rename";
       renameButton.type = "button";
       renameButton.textContent = "✎";
+      renameButton.dataset.action = "rename";
 
       const nameContainer = document.createElement("div");
       nameContainer.className = "layer-name-container";
@@ -1061,69 +1187,25 @@ export const initUI = ({
       nameContainer.appendChild(nameDisplay);
       nameContainer.appendChild(nameInput);
 
-      const finishRename = () => {
-        const nextName =
-          nameInput.value.trim() ||
-          `${config.layers.defaultNamePrefix} ${index + 1}`;
-        layer.name = nextName;
-        nameDisplay.textContent = nextName;
-        nameInput.style.display = "none";
-        nameDisplay.style.display = "inline";
-        saveState(state);
-      };
-
-      renameButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        nameInput.value =
-          layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`;
-        nameDisplay.style.display = "none";
-        nameInput.style.display = "inline";
-        nameInput.focus();
-        nameInput.select();
-      });
-
-      nameInput.addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
-
-      nameInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          finishRename();
-        }
-      });
-
-      nameInput.addEventListener("blur", () => {
-        finishRename();
-      });
-
       const duplicateButton = document.createElement("button");
       duplicateButton.className = "layer-duplicate";
       duplicateButton.type = "button";
+      duplicateButton.dataset.action = "duplicate";
       const duplicateIcon = document.createElement("img");
       duplicateIcon.src = "icons/duplicate.png";
       duplicateIcon.alt = config.layers.copySuffix;
       duplicateButton.appendChild(duplicateIcon);
-      duplicateButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        duplicateLayer(index);
-      });
 
       const visibilityButton = document.createElement("button");
       visibilityButton.className = "layer-visibility";
       visibilityButton.type = "button";
+      visibilityButton.dataset.action = "visibility";
       const visibilityIcon = document.createElement("img");
       visibilityIcon.src =
         layer.visible === false ? "icons/hide.png" : "icons/show.png";
       visibilityIcon.alt = layer.visible === false ? "Hide" : "Show";
       visibilityButton.appendChild(visibilityIcon);
       if (layer.visible === false) visibilityButton.classList.add("is-hidden");
-      visibilityButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        layer.visible = !layer.visible;
-        renderLayerList();
-        saveState(state);
-        scheduleRender();
-      });
 
       item.appendChild(reorder);
       item.appendChild(renameButton);
@@ -1136,23 +1218,9 @@ export const initUI = ({
         deleteButton.className = "layer-delete";
         deleteButton.type = "button";
         deleteButton.textContent = "×";
-        deleteButton.addEventListener("click", (event) => {
-          event.stopPropagation();
-          state.layers.splice(index, 1);
-          if (state.activeLayerIndex >= state.layers.length) {
-            state.activeLayerIndex = state.layers.length - 1;
-          }
-          renderLayerList();
-          applySettingsToUI();
-          saveState(state);
-          scheduleRender();
-        });
+        deleteButton.dataset.action = "delete";
         item.appendChild(deleteButton);
       }
-
-      item.addEventListener("click", () => {
-        setActiveLayer(index);
-      });
 
       layersList.appendChild(item);
     });
@@ -1190,9 +1258,11 @@ export const initUI = ({
   const syncLayerFromInputs = (layer) => {
     if (!layer) return;
     const getValue = (id) => document.getElementById(id)?.value;
-    const setNumber = (id, setter) => {
+    const setNumber = (id, key) => {
       const raw = Number(getValue(id));
-      if (!Number.isNaN(raw)) setter(raw);
+      if (!Number.isNaN(raw)) {
+        layer[key] = raw;
+      }
     };
     layer.shapeType = shapeTypeSelect?.value || layer.shapeType;
     layer.baseGeometry =
@@ -1208,38 +1278,8 @@ export const initUI = ({
       document.querySelector('input[name="gridAnchor"]:checked')?.value ||
       layer.gridAnchor ||
       "element";
-    setNumber("sizeNumber", (value) => {
-      layer.size = value;
-    });
-    setNumber("widthNumber", (value) => {
-      layer.width = value;
-    });
-    setNumber("heightNumber", (value) => {
-      layer.height = value;
-    });
-    setNumber("offsetXNumber", (value) => {
-      layer.offsetX = value;
-    });
-    setNumber("offsetYNumber", (value) => {
-      layer.offsetY = value;
-    });
-    setNumber("gapXNumber", (value) => {
-      layer.gapX = value;
-    });
-    setNumber("gapYNumber", (value) => {
-      layer.gapY = value;
-    });
-    setNumber("innerRadiusNumber", (value) => {
-      layer.innerRadius = value;
-    });
-    setNumber("weightNumber", (value) => {
-      layer.weight = value;
-    });
-    setNumber("shapeRotationNumber", (value) => {
-      layer.shapeRotation = value;
-    });
-    setNumber("patternRotationNumber", (value) => {
-      layer.patternRotation = value;
+    LINKED_LAYER_FIELDS.forEach(({ numberId, key }) => {
+      setNumber(numberId, key);
     });
     layer.fill = fillEnabledInput?.checked ?? layer.fill;
     layer.fillColor = fillColorInput?.value || layer.fillColor;
@@ -1316,32 +1356,16 @@ export const initUI = ({
       setRadioValue("layoutStyle", layer.layoutStyle);
       setRadioValue("alignment", layer.alignment);
       setRadioValue("gridAnchor", layer.gridAnchor || "element");
-      setLinkedValue("sizeRange", "sizeNumber", layer.size);
-      setLinkedValue("widthRange", "widthNumber", layer.width);
-      setLinkedValue("heightRange", "heightNumber", layer.height);
-      setLinkedValue("offsetXRange", "offsetXNumber", layer.offsetX);
-      setLinkedValue("offsetYRange", "offsetYNumber", layer.offsetY);
-      setLinkedValue("gapXRange", "gapXNumber", layer.gapX);
-      setLinkedValue("gapYRange", "gapYNumber", layer.gapY);
-      setLinkedValue("innerRadiusRange", "innerRadiusNumber", layer.innerRadius);
-      setLinkedValue("weightRange", "weightNumber", layer.weight);
-      setLinkedValue(
-        "shapeRotationRange",
-        "shapeRotationNumber",
-        layer.shapeRotation
-      );
-      setLinkedValue(
-        "patternRotationRange",
-        "patternRotationNumber",
-        layer.patternRotation
-      );
+      LINKED_LAYER_FIELDS.forEach(({ rangeId, numberId, key }) => {
+        setLinkedValue(rangeId, numberId, layer[key]);
+      });
       if (strokeColorInput) strokeColorInput.value = layer.strokeColor;
       if (fillEnabledInput) fillEnabledInput.checked = Boolean(layer.fill);
       if (fillColorInput) {
         fillColorInput.value =
           layer.fillColor || config.controls.element.fillColor.default;
       }
-      updateFillControls(Boolean(layer.fill));
+      updateFillControls(Boolean(layer.fill), layer.shapeType);
       if (alignToRadiusInput) {
         alignToRadiusInput.checked = layer.alignToRadius === true;
       }

@@ -116,6 +116,8 @@ export const loadState = () => {
 
   try {
     const parsed = JSON.parse(raw);
+    const defaultLayerTemplate = createDefaultLayer();
+    const defaultGlobalSettings = createDefaultState().globalSettings;
     const defaultPageSize = getPresetSize(
       config.controls.canvas.defaults.preset,
       config.controls.canvas.defaults.orientation
@@ -125,13 +127,13 @@ export const loadState = () => {
       const layers = parsed.layers
         .map((layer, index) => {
           const migratedLayer = {
-            ...createDefaultLayer(),
+            ...defaultLayerTemplate,
             name: layer.name || `${config.layers.defaultNamePrefix} ${index + 1}`,
             ...layer
           };
           migratedLayer.alignToRadius = normalizeBoolean(
             migratedLayer.alignToRadius,
-            createDefaultLayer().alignToRadius
+            defaultLayerTemplate.alignToRadius
           );
           if (layer.layout && !layer.layoutStyle) {
             if (layer.layout === "brick") {
@@ -155,7 +157,7 @@ export const loadState = () => {
 
       return {
         globalSettings: {
-          ...createDefaultState().globalSettings,
+          ...defaultGlobalSettings,
           ...(parsed.globalSettings || {})
         },
         layers,
@@ -163,7 +165,7 @@ export const loadState = () => {
       };
     }
 
-    const legacy = { ...createDefaultLayer(), name: `${config.layers.defaultNamePrefix} 1` };
+    const legacy = { ...defaultLayerTemplate, name: `${config.layers.defaultNamePrefix} 1` };
     if (parsed.spacingX !== undefined && parsed.gapX === undefined) {
       parsed.gapX = parsed.spacingX;
     }
@@ -214,7 +216,7 @@ export const loadState = () => {
     if (parsed.alignToRadius !== undefined) {
       legacy.alignToRadius = normalizeBoolean(
         parsed.alignToRadius,
-        createDefaultLayer().alignToRadius
+        defaultLayerTemplate.alignToRadius
       );
     }
     if (parsed.alignment !== undefined) legacy.alignment = parsed.alignment;

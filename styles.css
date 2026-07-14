@@ -55,6 +55,119 @@ body {
   flex-grow: 1;
 }
 
+.book-promo-card {
+  position: relative;
+  margin: 10px 20px 0;
+  border: 1px solid #ded3ee;
+  border-radius: 11px;
+  background: #f1eafa;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.book-promo-card:hover {
+  background: #eee4f9;
+  border-color: #cdb9e4;
+  box-shadow: 0 3px 8px rgba(83, 50, 112, 0.08);
+}
+
+.book-promo-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 10px;
+  border-radius: inherit;
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.book-promo-link:focus-visible {
+  outline: 3px solid rgba(111, 54, 151, 0.3);
+  outline-offset: 2px;
+}
+
+.book-promo-dismiss {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #665f6b;
+  font: inherit;
+  font-size: 18px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.book-promo-dismiss:hover {
+  background: rgba(111, 54, 151, 0.1);
+  color: #3f2354;
+}
+
+.book-promo-dismiss:focus-visible {
+  outline: 2px solid #6f3697;
+  outline-offset: 1px;
+}
+
+.book-promo-icon {
+  width: 80px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 80px;
+  border-radius: 9px;
+  background: #e2d5f0;
+  overflow: hidden;
+  color: #6f3697;
+}
+
+.book-promo-icon img {
+  width: 64px;
+  height: 64px;
+  display: block;
+  object-fit: contain;
+}
+
+.book-promo-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.book-promo-heading,
+.book-promo-description,
+.book-promo-cta {
+  overflow-wrap: anywhere;
+}
+
+.book-promo-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+.book-promo-description {
+  font-size: 14px;
+  font-weight: 400;
+  color: #555;
+}
+
+.book-promo-cta {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #6f3697;
+}
+
 .sidebar-footer {
   padding: 20px;
   padding-bottom: 0;

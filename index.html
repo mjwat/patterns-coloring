@@ -12,7 +12,7 @@
 <body>
   <div class="app">
     <aside class="sidebar">
-      <h2 class="sidebar-title">Settings</h2>
+      <h2 class="sidebar-title">Pattern Generator</h2>
       <div class="sidebar-content">
         <button id="resetDefaults" class="reset-button reset-top" type="button">
           Reset to Defaults
@@ -68,6 +68,13 @@
           </div>
 
           <div class="settings-separator"></div>
+
+          <div class="control">
+            <label class="checkbox-row">
+              <input id="showGuides" type="checkbox" checked />
+              Show Guides
+            </label>
+          </div>
 
           <div class="control">
             <label class="checkbox-row">
@@ -232,12 +239,6 @@
           </div>
         </div>
 
-        <div class="control">
-          <label class="checkbox-row">
-            <input id="showGuides" type="checkbox" checked />
-            Show Guides
-          </label>
-        </div>
         <div class="radio-group">
           <label class="control-label">Base Geometry</label>
           <div class="radio-row">
@@ -342,6 +343,30 @@
           </button>
         </div>
       </div>
+      <div id="bookPromoCard" class="book-promo-card">
+        <a
+          class="book-promo-link"
+          href="https://mjdreamercoloring.yhub.net/regions_geo.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View the Pattern Coloring Book"
+        >
+          <span class="book-promo-icon" aria-hidden="true">
+            <img src="icons/open-book.png" alt="" />
+          </span>
+          <span class="book-promo-copy">
+            <span class="book-promo-heading">Love these patterns?</span>
+            <span class="book-promo-description">Find more printable designs in my coloring book.</span>
+            <span class="book-promo-cta">View the Book →</span>
+          </span>
+        </a>
+        <button
+          id="dismissBookPromo"
+          class="book-promo-dismiss"
+          type="button"
+          aria-label="Hide coloring book card"
+        >×</button>
+      </div>
     </aside>
 
     <div class="workspace">
@@ -374,6 +399,7 @@
         <p>Please open this link on your PC or Laptop to start creating!</p>
       </div>
     </div>
+  <script type="module" src="scripts/promo.js"></script>
   <script type="module" src="scripts/app.js"></script>
   </body>
 
